@@ -1,4 +1,5 @@
 
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Data;
@@ -15,7 +16,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Identity configuration
-builder.Services.AddDefaultIdentity<ApplicationUser>(
+builder.Services.AddDefaultIdentity<IdentityUser>(
     options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
@@ -40,44 +41,58 @@ using (var scope = app.Services.CreateScope())
     {
         if (!await roleManager.RoleExistsAsync(role))
         {
-            var result = await roleManager.CreateAsync(new IdentityRole(role));
+            var roleResult = await roleManager.CreateAsync(
+                new IdentityRole(role));
 
-            if (!result.Succeeded)
+            if (!roleResult.Succeeded)
             {
                 throw new InvalidOperationException(
-                    string.Join(", ", result.Errors.Select(e => e.Description)));
+                    $"Failed to create role '{role}': " +
+                    string.Join(", ",
+                        roleResult.Errors.Select(e => e.Description)));
             }
         }
     }
 
     // Admin account creation
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
 
     string email = "admin@admin.com";
     string password = "Admin@123";
 
-    if (await userManager.FindByEmailAsync(email) == null)
-    {
-        var user = new ApplicationUser();
+    var user = await userManager.FindByEmailAsync(email);
 
-        user.UserName = email;
-        user.Email = email;
-        user.EmailConfirmed = true;
+    if (user == null)
+    {
+        user = new IdentityUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true
+        };
 
         var createResult = await userManager.CreateAsync(user, password);
 
         if (!createResult.Succeeded)
         {
             throw new InvalidOperationException(
-                string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                "Failed to create Admin account: " +
+                string.Join(", ",
+                    createResult.Errors.Select(e => e.Description)));
         }
+    }
 
+    // Assign Admin role if missing
+    if (!await userManager.IsInRoleAsync(user, "Admin"))
+    {
         var roleResult = await userManager.AddToRoleAsync(user, "Admin");
 
         if (!roleResult.Succeeded)
         {
             throw new InvalidOperationException(
-                string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+                "Failed to assign Admin role: " +
+                string.Join(", ",
+                    roleResult.Errors.Select(e => e.Description)));
         }
     }
 }
@@ -112,4 +127,3 @@ app.MapRazorPages()
     .WithStaticAssets();
 
 app.Run();
-
