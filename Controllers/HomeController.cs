@@ -18,12 +18,28 @@ namespace RaceDay.Controllers
             return View();
         }
 
+        // Admin Dashboard
         [Authorize(Roles = "Admin")]
         public IActionResult AdminDashboard()
         {
             return View();
         }
 
+        // Organiser Dashboard
+        [Authorize(Roles = "Organiser")]
+        public IActionResult OrganiserDashboard()
+        {
+            return View();
+        }
+
+        // Participant Dashboard
+        [Authorize(Roles = "Participant")]
+        public IActionResult ParticipantDashboard()
+        {
+            return View();
+        }
+
+        // Error page
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
@@ -34,4 +50,3 @@ namespace RaceDay.Controllers
         }
     }
 }
-
