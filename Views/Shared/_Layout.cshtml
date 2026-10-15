@@ -77,6 +77,15 @@
                                     Admin Dashboard
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-area=""
+                                   asp-controller="UserRoles"
+                                   asp-action="Index">
+                                    User Roles
+                                </a>
+                            </li>
                         }
 
                         @if (User.IsInRole("Organiser"))
@@ -101,6 +110,7 @@
                                     Participant Dashboard
                                 </a>
                             </li>
+
                         }
 
                     </ul>
@@ -108,7 +118,6 @@
                     <partial name="_LoginPartial" />
 
                 </div>
-
             </div>
         </nav>
     </header>
@@ -130,7 +139,7 @@
         </div>
     </footer>
 
-    <script src="~/lib/jquery/dist/js/jquery.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -140,3 +149,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

@@ -1,0 +1,70 @@
+﻿@model IEnumerable<RaceDay.Models.UserRolesViewModel>
+
+@{
+    ViewData["Title"] = "User Roles";
+}
+
+<div class="container mt-4">
+
+    <h1>User Role Management</h1>
+
+    <p class="text-muted">
+        View registered RaceDay users and their assigned roles.
+    </p>
+
+    <div class="card shadow-sm mt-4">
+
+        <div class="card-header">
+            <h4 class="mb-0">Registered Users</h4>
+        </div>
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Username</th>
+                            <th>Assigned Roles</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.Email</td>
+
+                                <td>@user.UserName</td>
+
+                                <td>
+                                    @if (user.Roles.Any())
+                                    {
+                                        @string.Join(", ", user.Roles)
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            No Role Assigned
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <p class="text-muted">
+                    No registered users found.
+                </p>
+            }
+
+        </div>
+    </div>
+</div>
