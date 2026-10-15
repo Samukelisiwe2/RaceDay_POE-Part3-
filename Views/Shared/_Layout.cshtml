@@ -9,9 +9,11 @@
 
     <script type="importmap"></script>
 
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet"
           href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+    <!-- Application CSS -->
     <link rel="stylesheet"
           href="~/css/site.css"
           asp-append-version="true" />
@@ -27,6 +29,7 @@
 
             <div class="container-fluid">
 
+                <!-- Website name -->
                 <a class="navbar-brand"
                    asp-area=""
                    asp-controller="Home"
@@ -34,21 +37,24 @@
                     RaceDay
                 </a>
 
+                <!-- Mobile navigation button -->
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
-                        data-bs-target=".navbar-collapse"
-                        aria-controls="navbarSupportedContent"
+                        data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar"
                         aria-expanded="false"
                         aria-label="Toggle navigation">
 
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                <div id="mainNavbar"
+                     class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
 
                     <ul class="navbar-nav flex-grow-1">
 
+                        <!-- Home -->
                         <li class="nav-item">
                             <a class="nav-link text-dark"
                                asp-area=""
@@ -58,6 +64,7 @@
                             </a>
                         </li>
 
+                        <!-- Privacy -->
                         <li class="nav-item">
                             <a class="nav-link text-dark"
                                asp-area=""
@@ -67,13 +74,14 @@
                             </a>
                         </li>
 
+                        <!-- Admin navigation -->
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark"
                                    asp-area=""
-                                   asp-controller="Home"
-                                   asp-action="AdminDashboard">
+                                   asp-controller="Admin"
+                                   asp-action="Index">
                                     Admin Dashboard
                                 </a>
                             </li>
@@ -88,6 +96,7 @@
                             </li>
                         }
 
+                        <!-- Organiser navigation -->
                         @if (User.IsInRole("Organiser"))
                         {
                             <li class="nav-item">
@@ -100,6 +109,7 @@
                             </li>
                         }
 
+                        <!-- Participant navigation -->
                         @if (User.IsInRole("Participant"))
                         {
                             <li class="nav-item">
@@ -110,11 +120,11 @@
                                     Participant Dashboard
                                 </a>
                             </li>
-
                         }
 
                     </ul>
 
+                    <!-- Login and logout -->
                     <partial name="_LoginPartial" />
 
                 </div>
@@ -122,12 +132,14 @@
         </nav>
     </header>
 
+    <!-- Main content -->
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
+    <!-- Footer -->
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2026 - RaceDay -
@@ -139,6 +151,7 @@
         </div>
     </footer>
 
+    <!-- JavaScript -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

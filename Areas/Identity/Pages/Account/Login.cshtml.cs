@@ -1,4 +1,5 @@
 
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -43,26 +44,30 @@ public class LoginModel : PageModel
     {
         [Required]
         [EmailAddress]
+        [Display(Name = "Email")]
         public string Email { get; set; } = default!;
 
         [Required]
         [DataType(DataType.Password)]
+        [Display(Name = "Password")]
         public string Password { get; set; } = default!;
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
 
-    // Load the login page
+    // Display login page
     public async Task OnGetAsync(string? returnUrl = null)
     {
         if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            ModelState.AddModelError(string.Empty, ErrorMessage);
+            ModelState.AddModelError(
+                string.Empty, ErrorMessage);
         }
 
         ReturnUrl = returnUrl ?? Url.Content("~/");
 
+        // Clear external authentication cookie
         await HttpContext.SignOutAsync(
             IdentityConstants.ExternalScheme);
 
@@ -70,89 +75,106 @@ public class LoginModel : PageModel
             .GetExternalAuthenticationSchemesAsync()).ToList();
     }
 
-    // Process login request
+    // Process login form
     public async Task<IActionResult> OnPostAsync(
         string? returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
+
+        // Prevent unsafe return URLs
+        if (!Url.IsLocalUrl(returnUrl))
+        {
+            returnUrl = Url.Content("~/");
+        }
 
         ReturnUrl = returnUrl;
 
         ExternalLogins = (await _signInManager
             .GetExternalAuthenticationSchemesAsync()).ToList();
 
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            var result = await _signInManager.PasswordSignInAsync(
-                Input.Email,
-                Input.Password,
-                Input.RememberMe,
-                lockoutOnFailure: false);
-
-            if (result.Succeeded)
-            {
-                _logger.LogInformation("User logged in.");
-
-                // Preserve a specific safe return URL
-                if (Url.IsLocalUrl(returnUrl) &&
-                    returnUrl != "/" &&
-                    returnUrl != "~/")
-                {
-                    return LocalRedirect(returnUrl);
-                }
-
-                // Find the authenticated user
-                var user = await _userManager
-                    .FindByNameAsync(Input.Email);
-
-                if (user != null)
-                {
-                    // Redirect Admin
-                    if (await _userManager.IsInRoleAsync(user, "Admin"))
-                    {
-                        return LocalRedirect("~/Home/AdminDashboard");
-                    }
-
-                    // Redirect Organiser
-                    if (await _userManager.IsInRoleAsync(user, "Organiser"))
-                    {
-                        return LocalRedirect("~/Home/OrganiserDashboard");
-                    }
-
-                    // Redirect Participant
-                    if (await _userManager.IsInRoleAsync(user, "Participant"))
-                    {
-                        return LocalRedirect("~/Home/ParticipantDashboard");
-                    }
-                }
-
-                // Default destination for users without a role
-                return LocalRedirect("~/");
-            }
-
-            if (result.RequiresTwoFactor)
-            {
-                return RedirectToPage(
-                    "./LoginWith2fa",
-                    new
-                    {
-                        ReturnUrl = returnUrl,
-                        RememberMe = Input.RememberMe
-                    });
-            }
-
-            if (result.IsLockedOut)
-            {
-                _logger.LogWarning("User account locked out.");
-                return RedirectToPage("./Lockout");
-            }
-
-            ModelState.AddModelError(
-                string.Empty,
-                "Invalid login attempt.");
-
             return Page();
         }
+
+        // Authenticate using ASP.NET Identity
+        var result = await _signInManager.PasswordSignInAsync(
+            Input.Email,
+            Input.Password,
+            Input.RememberMe,
+            lockoutOnFailure: false);
+
+        if (result.Succeeded)
+        {
+            _logger.LogInformation(
+                "User logged in successfully.");
+
+            // Get authenticated user
+            var user = await _userManager
+                .FindByNameAsync(Input.Email);
+
+            // Return to requested protected page
+            // if a valid return URL was provided
+            if (returnUrl != "/" && returnUrl != "~/")
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            if (user != null)
+            {
+                // Admin Dashboard
+                if (await _userManager.IsInRoleAsync(
+                    user, "Admin"))
+                {
+                    return LocalRedirect("~/Admin");
+                }
+
+                // Organiser Dashboard
+                if (await _userManager.IsInRoleAsync(
+                    user, "Organiser"))
+                {
+                    return LocalRedirect(
+                        "~/Home/OrganiserDashboard");
+                }
+
+                // Participant Dashboard
+                if (await _userManager.IsInRoleAsync(
+                    user, "Participant"))
+                {
+                    return LocalRedirect(
+                        "~/Home/ParticipantDashboard");
+                }
+            }
+
+            // Users without approved roles
+            return LocalRedirect("~/");
+        }
+
+        // Two-factor authentication
+        if (result.RequiresTwoFactor)
+        {
+            return RedirectToPage(
+                "./LoginWith2fa",
+                new
+                {
+                    ReturnUrl = returnUrl,
+                    RememberMe = Input.RememberMe
+                });
+        }
+
+        // Locked account
+        if (result.IsLockedOut)
+        {
+            _logger.LogWarning(
+                "User account locked out.");
+
+            return RedirectToPage("./Lockout");
+        }
+
+        // Invalid credentials
+        ModelState.AddModelError(
+            string.Empty,
+            "Invalid login attempt.");
 
         return Page();
     }

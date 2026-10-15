@@ -11,6 +11,34 @@
         Manage registered users and review role requests.
     </p>
 
+    <!-- Success message -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+            @TempData["Success"]
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    <!-- Error message -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+            @TempData["Error"]
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
     <!-- Dashboard Statistics -->
     <div class="row g-3 mt-3">
 
@@ -46,18 +74,21 @@
 
     <!-- Registered Users -->
     <div class="card shadow-sm mt-4">
+
         <div class="card-header">
             <h4 class="mb-0">Registered Users</h4>
         </div>
 
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
+
+                <table class="table table-striped table-hover align-middle">
+
                     <thead>
                         <tr>
-                            <th>Email</th>
-                            <th>Assigned Role</th>
-                            <th>Status</th>
+                            <th scope="col">Email</th>
+                            <th scope="col">Assigned Role</th>
+                            <th scope="col">Status</th>
                         </tr>
                     </thead>
 
@@ -68,9 +99,14 @@
                                 <td>@user.Email</td>
 
                                 <td>
-                                    @(user.Roles.Count > 0
-                                        ? string.Join(", ", user.Roles)
-                                        : "Not assigned")
+                                    @if (user.Roles.Count > 0)
+                                    {
+                                        @string.Join(", ", user.Roles)
+                                    }
+                                    else
+                                    {
+                                        <span>Not assigned</span>
+                                    }
                                 </td>
 
                                 <td>
@@ -90,12 +126,13 @@
                             </tr>
                         }
                     </tbody>
+
                 </table>
             </div>
 
             @if (Model.Users.Count == 0)
             {
-                <p class="text-muted">
+                <p class="text-muted mb-0">
                     No registered users found.
                 </p>
             }
@@ -104,6 +141,7 @@
 
     <!-- Pending Role Requests -->
     <div class="card shadow-sm mt-4 mb-4">
+
         <div class="card-header">
             <h4 class="mb-0">Pending Role Requests</h4>
         </div>
@@ -119,13 +157,16 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+
+                    <table class="table table-striped table-hover align-middle">
+
                         <thead>
                             <tr>
-                                <th>Email</th>
-                                <th>Requested Role</th>
-                                <th>Date Requested</th>
-                                <th>Status</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Requested Role</th>
+                                <th scope="col">Date Requested</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
 
@@ -146,14 +187,53 @@
                                             @request.Status
                                         </span>
                                     </td>
+
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+
+                                            <!-- Approve Button -->
+                                            <form asp-area=""
+                                                  asp-controller="Admin"
+                                                  asp-action="ApproveRole"
+                                                  asp-route-id="@request.Id"
+                                                  method="post">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="btn btn-success btn-sm">
+                                                    Approve
+                                                </button>
+
+                                            </form>
+
+                                            <!-- Reject Button -->
+                                            <form asp-area=""
+                                                  asp-controller="Admin"
+                                                  asp-action="RejectRole"
+                                                  asp-route-id="@request.Id"
+                                                  method="post"
+                                                  onsubmit="return confirm('Are you sure you want to reject this role request?');">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="btn btn-danger btn-sm">
+                                                    Reject
+                                                </button>
+
+                                            </form>
+
+                                        </div>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
+
                     </table>
                 </div>
             }
 
         </div>
     </div>
-
 </div>
