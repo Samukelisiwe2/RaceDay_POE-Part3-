@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using RaceDay.Data;
 using RaceDay.Models;
-using System.Linq;
 
 namespace RaceDay.Controllers
 {
@@ -11,16 +12,22 @@ namespace RaceDay.Controllers
     public class AdminController : Controller
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ApplicationDbContext _context;
 
-        public AdminController(UserManager<IdentityUser> userManager)
+        public AdminController(
+            UserManager<IdentityUser> userManager,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
+        // Display Admin dashboard
         public async Task<IActionResult> Index()
         {
-            var users = _userManager.Users.ToList();
             var model = new AdminDashboardViewModel();
+
+            var users = await _userManager.Users.ToListAsync();
 
             foreach (var user in users)
             {
@@ -29,18 +36,44 @@ namespace RaceDay.Controllers
                 model.Users.Add(new AdminUserViewModel
                 {
                     UserId = user.Id,
-                    Email = user.Email ?? "",
+                    Email = user.Email ?? string.Empty,
                     Roles = roles.ToList()
                 });
             }
 
+            // Dashboard statistics
             model.TotalUsers = model.Users.Count;
+
             model.TotalOrganisers = model.Users.Count(
                 u => u.Roles.Contains("Organiser"));
+
             model.TotalParticipants = model.Users.Count(
                 u => u.Roles.Contains("Participant"));
+
             model.UnassignedUsers = model.Users.Count(
                 u => u.Roles.Count == 0);
+
+            // Retrieve pending role requests
+            var pendingRequests = await _context.RoleRequests
+                .Where(r => r.Status == "Pending")
+                .OrderBy(r => r.RequestedAt)
+                .ToListAsync();
+
+            foreach (var request in pendingRequests)
+            {
+                var user = await _userManager.FindByIdAsync(
+                    request.UserId);
+
+                model.PendingRequests.Add(new RoleRequestViewModel
+                {
+                    Id = request.Id,
+                    UserId = request.UserId,
+                    Email = user?.Email ?? "Unknown user",
+                    RequestedRole = request.RequestedRole,
+                    Status = request.Status,
+                    RequestedAt = request.RequestedAt
+                });
+            }
 
             return View(model);
         }

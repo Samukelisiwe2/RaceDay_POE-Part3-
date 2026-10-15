@@ -93,23 +93,41 @@ public class LoginModel : PageModel
             {
                 _logger.LogInformation("User logged in.");
 
+                // Preserve a specific safe return URL
+                if (Url.IsLocalUrl(returnUrl) &&
+                    returnUrl != "/" &&
+                    returnUrl != "~/")
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
+                // Find the authenticated user
                 var user = await _userManager
                     .FindByNameAsync(Input.Email);
 
-                if (user != null &&
-                    await _userManager.IsInRoleAsync(user, "Admin"))
+                if (user != null)
                 {
-                    if (Url.IsLocalUrl(returnUrl) &&
-                        returnUrl != "/" &&
-                        returnUrl != "~/")
+                    // Redirect Admin
+                    if (await _userManager.IsInRoleAsync(user, "Admin"))
                     {
-                        return LocalRedirect(returnUrl);
+                        return LocalRedirect("~/Home/AdminDashboard");
                     }
 
-                    return LocalRedirect("~/Home/AdminDashboard");
+                    // Redirect Organiser
+                    if (await _userManager.IsInRoleAsync(user, "Organiser"))
+                    {
+                        return LocalRedirect("~/Home/OrganiserDashboard");
+                    }
+
+                    // Redirect Participant
+                    if (await _userManager.IsInRoleAsync(user, "Participant"))
+                    {
+                        return LocalRedirect("~/Home/ParticipantDashboard");
+                    }
                 }
 
-                return LocalRedirect(returnUrl);
+                // Default destination for users without a role
+                return LocalRedirect("~/");
             }
 
             if (result.RequiresTwoFactor)

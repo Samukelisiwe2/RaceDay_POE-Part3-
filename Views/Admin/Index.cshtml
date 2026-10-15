@@ -5,47 +5,54 @@
 }
 
 <div class="container mt-4">
-    <h1>RaceDay Admin Dashboard</h1>
-    <p class="text-muted">Manage users and view their assigned roles.</p>
 
-    <div class="row mt-4">
+    <h1>RaceDay Admin Dashboard</h1>
+    <p class="text-muted">
+        Manage registered users and review role requests.
+    </p>
+
+    <!-- Dashboard Statistics -->
+    <div class="row g-3 mt-3">
+
         <div class="col-md-3">
-            <div class="card p-3">
+            <div class="card shadow-sm p-3 h-100">
                 <h5>Total Users</h5>
                 <h2>@Model.TotalUsers</h2>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card p-3">
+            <div class="card shadow-sm p-3 h-100">
                 <h5>Organisers</h5>
                 <h2>@Model.TotalOrganisers</h2>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card p-3">
+            <div class="card shadow-sm p-3 h-100">
                 <h5>Participants</h5>
                 <h2>@Model.TotalParticipants</h2>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card p-3">
+            <div class="card shadow-sm p-3 h-100">
                 <h5>Unassigned Users</h5>
                 <h2>@Model.UnassignedUsers</h2>
             </div>
         </div>
+
     </div>
 
-    <div class="card mt-4">
+    <!-- Registered Users -->
+    <div class="card shadow-sm mt-4">
         <div class="card-header">
-            <h4>Registered Users</h4>
+            <h4 class="mb-0">Registered Users</h4>
         </div>
 
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
                             <th>Email</th>
@@ -85,6 +92,68 @@
                     </tbody>
                 </table>
             </div>
+
+            @if (Model.Users.Count == 0)
+            {
+                <p class="text-muted">
+                    No registered users found.
+                </p>
+            }
         </div>
     </div>
+
+    <!-- Pending Role Requests -->
+    <div class="card shadow-sm mt-4 mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Pending Role Requests</h4>
+        </div>
+
+        <div class="card-body">
+
+            @if (Model.PendingRequests.Count == 0)
+            {
+                <p class="text-muted mb-0">
+                    There are currently no pending role requests.
+                </p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Requested Role</th>
+                                <th>Date Requested</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var request in Model.PendingRequests)
+                            {
+                                <tr>
+                                    <td>@request.Email</td>
+
+                                    <td>@request.RequestedRole</td>
+
+                                    <td>
+                                        @request.RequestedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-warning text-dark">
+                                            @request.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+        </div>
+    </div>
+
 </div>
