@@ -1,0 +1,117 @@
+﻿@model RaceDay.Models.EventFormViewModel
+
+@{
+    ViewData["Title"] = "Create Event";
+}
+
+<div class="container mt-4">
+    <h1>Create Race Event</h1>
+    <p class="text-muted">
+        Enter the details of your new race event.
+    </p>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+
+            <form asp-controller="Events"
+                  asp-action="Create"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="EventName"
+                           class="form-label"></label>
+                    <input asp-for="EventName"
+                           class="form-control" />
+                    <span asp-validation-for="EventName"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description"
+                           class="form-label"></label>
+                    <textarea asp-for="Description"
+                              class="form-control"
+                              rows="3"></textarea>
+                    <span asp-validation-for="Description"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="EventDate"
+                           class="form-label"></label>
+                    <input asp-for="EventDate"
+                           type="date"
+                           class="form-control" />
+                    <span asp-validation-for="EventDate"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ClosingDate"
+                           class="form-label"></label>
+                    <input asp-for="ClosingDate"
+                           type="date"
+                           class="form-control" />
+                    <span asp-validation-for="ClosingDate"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Location"
+                           class="form-label"></label>
+                    <input asp-for="Location"
+                           class="form-control" />
+                    <span asp-validation-for="Location"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="EventType"
+                           class="form-label"></label>
+                    <select asp-for="EventType"
+                            class="form-select">
+                        <option value="Run">Run</option>
+                        <option value="Walk">Walk</option>
+                        <option value="Cycle">Cycle</option>
+                    </select>
+                    <span asp-validation-for="EventType"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Status"
+                           class="form-label"></label>
+                    <select asp-for="Status"
+                            class="form-select">
+                        <option value="Planned">Planned</option>
+                        <option value="Open">Open</option>
+                        <option value="Closed">Closed</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <span asp-validation-for="Status"
+                          class="text-danger"></span>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Create Event
+                </button>
+
+                <a asp-action="Index"
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

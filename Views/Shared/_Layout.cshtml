@@ -3,7 +3,8 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
 
     <title>@ViewData["Title"] - RaceDay</title>
 
@@ -45,10 +46,10 @@
                         aria-controls="mainNavbar"
                         aria-expanded="false"
                         aria-label="Toggle navigation">
-
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
+                <!-- Navigation links -->
                 <div id="mainNavbar"
                      class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
 
@@ -74,7 +75,7 @@
                             </a>
                         </li>
 
-                        <!-- Admin navigation -->
+                        <!-- Admin Navigation -->
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
@@ -96,7 +97,7 @@
                             </li>
                         }
 
-                        <!-- Organiser navigation -->
+                        <!-- Organiser Navigation -->
                         @if (User.IsInRole("Organiser"))
                         {
                             <li class="nav-item">
@@ -109,7 +110,7 @@
                             </li>
                         }
 
-                        <!-- Participant navigation -->
+                        <!-- Participant Navigation -->
                         @if (User.IsInRole("Participant"))
                         {
                             <li class="nav-item">
@@ -122,9 +123,33 @@
                             </li>
                         }
 
+                        <!-- Race Events: Organiser and Participant -->
+                        @if (User.IsInRole("Organiser") ||
+                             User.IsInRole("Participant"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-area=""
+                                   asp-controller="Events"
+                                   asp-action="Index">
+                                    Race Events
+                                </a>
+                            </li>
+
+                            <!-- My Profile -->
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-area=""
+                                   asp-controller="Profile"
+                                   asp-action="Index">
+                                    My Profile
+                                </a>
+                            </li>
+                        }
+
                     </ul>
 
-                    <!-- Login and logout -->
+                    <!-- Login and Logout -->
                     <partial name="_LoginPartial" />
 
                 </div>
@@ -132,7 +157,7 @@
         </nav>
     </header>
 
-    <!-- Main content -->
+    <!-- Main Content -->
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -162,4 +187,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-
