@@ -1,0 +1,95 @@
+﻿@model IEnumerable<RaceDay.Models.Enrollment>
+
+@{
+    ViewData["Title"] = "My Enrolments";
+}
+
+<div class="container mt-4">
+
+    <h1>My Race Enrolments</h1>
+
+    <p class="text-muted">
+        View your registered races and race numbers.
+    </p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            You haven't entered any races yet.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Category</th>
+                        <th>Distance</th>
+                        <th>Race Number</th>
+                        <th>Entry Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        <tr>
+                            <td>
+                                @entry.RaceCategory.Event.EventName
+                            </td>
+
+                            <td>
+                                @entry.RaceCategory.CategoryName
+                            </td>
+
+                            <td>
+                                @entry.RaceCategory.DistanceKm.ToString("0.##") km
+                            </td>
+
+                            <td>
+                                <strong>@entry.RaceNumber</strong>
+                            </td>
+
+                            <td>
+                                @entry.EnrollmentDate.ToString("dd MMM yyyy")
+                            </td>
+
+                            <td>
+                                <span class="badge bg-warning text-dark">
+                                    @entry.EnrollmentStatus
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    }
+
+    <a asp-controller="Events"
+       asp-action="Index"
+       class="btn btn-outline-primary mt-3">
+        Browse Races
+    </a>
+
+</div>
+

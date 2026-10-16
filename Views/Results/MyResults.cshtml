@@ -1,0 +1,72 @@
+﻿@model IEnumerable<RaceDay.Models.RaceResult>
+
+@{
+    ViewData["Title"] = "My Race Results";
+}
+
+<div class="container mt-4">
+    <h1>My Race Results</h1>
+    <p class="text-muted">
+        View your finishing times and positions.
+    </p>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            No race results have been recorded yet.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Category</th>
+                        <th>Race Number</th>
+                        <th>Finish Time</th>
+                        <th>Position</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var result in Model)
+                    {
+                        <tr>
+                            <td>
+                                @result.Enrollment.RaceCategory.Event.EventName
+                            </td>
+                            <td>
+                                @result.Enrollment.RaceCategory.CategoryName
+                            </td>
+                            <td>@result.Enrollment.RaceNumber</td>
+                            <td>
+                                @(result.FinishTime.HasValue
+                                    ? result.FinishTime.Value.ToString("dd MMM yyyy HH:mm:ss")
+                                    : "Not recorded")
+                            </td>
+                            <td>
+                                @(result.OverallPosition?.ToString() ?? "-")
+                            </td>
+                            <td>@result.ResultStatus</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <a asp-controller="Events"
+       asp-action="Index"
+       class="btn btn-outline-primary">
+        Browse Events
+    </a>
+</div>

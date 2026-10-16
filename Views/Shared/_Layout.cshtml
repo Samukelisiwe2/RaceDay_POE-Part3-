@@ -1,8 +1,10 @@
 ﻿
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
 
@@ -27,10 +29,9 @@
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-
             <div class="container-fluid">
 
-                <!-- Website name -->
+                <!-- RaceDay Brand -->
                 <a class="navbar-brand"
                    asp-area=""
                    asp-controller="Home"
@@ -38,7 +39,7 @@
                     RaceDay
                 </a>
 
-                <!-- Mobile navigation button -->
+                <!-- Mobile Navigation -->
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
@@ -49,7 +50,6 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <!-- Navigation links -->
                 <div id="mainNavbar"
                      class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
 
@@ -121,12 +121,23 @@
                                     Participant Dashboard
                                 </a>
                             </li>
+
+                            <!-- My Enrolments -->
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-area=""
+                                   asp-controller="Enrollments"
+                                   asp-action="MyEnrollments">
+                                    My Enrolments
+                                </a>
+                            </li>
                         }
 
-                        <!-- Race Events: Organiser and Participant -->
+                        <!-- Links shared by Organisers and Participants -->
                         @if (User.IsInRole("Organiser") ||
                              User.IsInRole("Participant"))
                         {
+                            <!-- Race Events -->
                             <li class="nav-item">
                                 <a class="nav-link text-dark"
                                    asp-area=""

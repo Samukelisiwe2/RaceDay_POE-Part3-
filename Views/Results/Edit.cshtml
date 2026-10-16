@@ -1,0 +1,94 @@
+﻿@model RaceDay.Models.RaceResultFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Race Result";
+}
+
+<div class="container mt-4">
+    <h1>Edit Race Result</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5>@Model.ParticipantName</h5>
+            <p>
+                <strong>Event:</strong> @Model.EventName<br />
+                <strong>Category:</strong> @Model.CategoryName<br />
+                <strong>Race Number:</strong> @Model.RaceNumber
+            </p>
+
+            <form asp-controller="Results"
+                  asp-action="Edit"
+                  asp-route-id="@Model.ResultId"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="All"
+                     class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="ResultStatus"
+                           class="form-label"></label>
+
+                    <select asp-for="ResultStatus"
+                            class="form-select">
+                        <option value="Pending">Pending</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Did Not Finish">Did Not Finish</option>
+                        <option value="Disqualified">Disqualified</option>
+                    </select>
+
+                    <span asp-validation-for="ResultStatus"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="StartTime"
+                           class="form-label"></label>
+                    <input asp-for="StartTime"
+                           type="datetime-local"
+                           class="form-control" />
+                    <span asp-validation-for="StartTime"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="FinishTime"
+                           class="form-label"></label>
+                    <input asp-for="FinishTime"
+                           type="datetime-local"
+                           class="form-control" />
+                    <span asp-validation-for="FinishTime"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="OverallPosition"
+                           class="form-label"></label>
+                    <input asp-for="OverallPosition"
+                           type="number"
+                           min="1"
+                           class="form-control" />
+                    <span asp-validation-for="OverallPosition"
+                          class="text-danger"></span>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-success">
+                    Save Changes
+                </button>
+
+                <a asp-controller="Enrollments"
+                   asp-action="EventEnrollments"
+                   asp-route-eventId="@(ViewBag.EventId)"
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -5,9 +5,15 @@
 }
 
 <div class="container mt-4">
-    <h1>@Model.EventName</h1>
-    <p class="text-muted">@Model.Description</p>
 
+    <!-- Event Title -->
+    <h1>@Model.EventName</h1>
+
+    <p class="text-muted">
+        @Model.Description
+    </p>
+
+    <!-- Success Message -->
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success">
@@ -15,6 +21,7 @@
         </div>
     }
 
+    <!-- Error Message -->
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger">
@@ -22,9 +29,14 @@
         </div>
     }
 
+    <!-- Event Information -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
+
+            <h4 class="mb-3">Event Information</h4>
+
             <dl class="row">
+
                 <dt class="col-sm-3">Organiser</dt>
                 <dd class="col-sm-9">
                     @Model.Organiser?.OrganiserName
@@ -41,77 +53,124 @@
                 </dd>
 
                 <dt class="col-sm-3">Location</dt>
-                <dd class="col-sm-9">@Model.Location</dd>
+                <dd class="col-sm-9">
+                    @Model.Location
+                </dd>
 
                 <dt class="col-sm-3">Event Type</dt>
-                <dd class="col-sm-9">@Model.EventType</dd>
+                <dd class="col-sm-9">
+                    @Model.EventType
+                </dd>
 
                 <dt class="col-sm-3">Status</dt>
-                <dd class="col-sm-9">@Model.Status</dd>
+                <dd class="col-sm-9">
+                    <span class="badge bg-secondary">
+                        @Model.Status
+                    </span>
+                </dd>
+
             </dl>
         </div>
     </div>
 
-    <h3>Race Categories</h3>
+    <!-- Race Categories Section -->
+    <div class="d-flex flex-wrap justify-content-between
+        align-items-center gap-2 mb-3">
 
+        <h3 class="mb-0">Race Categories</h3>
+
+        <!-- Both roles can view categories -->
+        <a asp-controller="RaceCategories"
+           asp-action="Index"
+           asp-route-eventId="@Model.EventId"
+           class="btn btn-outline-primary">
+            View Race Categories
+        </a>
+
+    </div>
+
+    <!-- Categories Table -->
     @if (Model.RaceCategories == null ||
          !Model.RaceCategories.Any())
     {
-        <p class="text-muted">
+        <div class="alert alert-info">
             No race categories have been added yet.
-        </p>
+        </div>
     }
     else
     {
         <div class="table-responsive mb-4">
-            <table class="table table-bordered">
+
+            <table class="table table-striped table-hover
+                align-middle">
+
                 <thead>
                     <tr>
                         <th>Category</th>
                         <th>Distance</th>
                         <th>Entry Fee</th>
-                        <th>Capacity</th>
+                        <th>Participants</th>
                     </tr>
                 </thead>
+
                 <tbody>
-                    @foreach (var category in Model.RaceCategories)
+                    @foreach (var category in Model.RaceCategories
+                        .OrderBy(c => c.DistanceKm))
                     {
                         <tr>
-                            <td>@category.CategoryName</td>
-                            <td>@category.DistanceKm km</td>
+
                             <td>
-                                @category.EntryFee.ToString("C")
+                                @category.CategoryName
                             </td>
+
+                            <td>
+                                @category.DistanceKm.ToString("0.##") km
+                            </td>
+
+                            <td>
+                                R @category.EntryFee.ToString("N2")
+                            </td>
+
                             <td>
                                 @category.CurrentParticipants /
                                 @category.MaxParticipants
                             </td>
+
                         </tr>
                     }
                 </tbody>
+
             </table>
         </div>
     }
 
+    <!-- Event Management Buttons -->
     @if (User.IsInRole("Organiser"))
     {
-        <div class="d-flex gap-2 mb-3">
-            <a asp-action="Edit"
+        <div class="d-flex flex-wrap gap-2 mb-3">
+
+            <a asp-controller="Events"
+               asp-action="Edit"
                asp-route-id="@Model.EventId"
                class="btn btn-warning">
                 Edit Event
             </a>
 
-            <a asp-action="Delete"
+            <a asp-controller="Events"
+               asp-action="Delete"
                asp-route-id="@Model.EventId"
                class="btn btn-danger">
                 Delete Event
             </a>
+
         </div>
     }
 
-    <a asp-action="Index" class="btn btn-outline-secondary">
+    <!-- Back Button -->
+    <a asp-controller="Events"
+       asp-action="Index"
+       class="btn btn-outline-secondary">
         Back to Events
     </a>
-</div>
 
+</div>
