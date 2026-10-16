@@ -157,6 +157,9 @@ namespace RaceDay.Data
 
                 entity.ToTable(t =>
                 {
+                    // Required for SQL Server AFTER triggers
+                    t.UseSqlOutputClause(false);
+
                     t.HasCheckConstraint("CK_Payment_Amount",
                         "[Amount] >= 0");
 
@@ -191,4 +194,3 @@ namespace RaceDay.Data
         }
     }
 }
-

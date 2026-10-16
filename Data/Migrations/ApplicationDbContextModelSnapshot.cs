@@ -471,6 +471,8 @@ namespace RaceDay.Data.Migrations
 
                             t.HasCheckConstraint("CK_Payment_Status", "[Payment_Status] IN ('Pending', 'Paid', 'Failed', 'Refunded')");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("RaceDay.Models.RaceCategory", b =>
