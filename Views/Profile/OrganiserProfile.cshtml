@@ -1,0 +1,79 @@
+﻿@model RaceDay.Models.OrganiserProfileViewModel
+
+@{
+    ViewData["Title"] = "Organiser Profile";
+}
+
+<div class="container mt-4">
+    <h2>My Organiser Profile</h2>
+
+    <p class="text-muted">
+        View and update your organiser details.
+    </p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+
+            <form asp-controller="Profile"
+                  asp-action="OrganiserProfile"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"
+                     class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="OrganiserName"
+                           class="form-label"></label>
+
+                    <input asp-for="OrganiserName"
+                           class="form-control" />
+
+                    <span asp-validation-for="OrganiserName"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Email"
+                           class="form-label"></label>
+
+                    <input asp-for="Email"
+                           class="form-control"
+                           readonly />
+
+                    <span asp-validation-for="Email"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PhoneNumber"
+                           class="form-label"></label>
+
+                    <input asp-for="PhoneNumber"
+                           class="form-control" />
+
+                    <span asp-validation-for="PhoneNumber"
+                          class="text-danger"></span>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Save Profile
+                </button>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

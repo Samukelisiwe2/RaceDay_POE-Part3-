@@ -1,4 +1,5 @@
 ﻿
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,7 @@ namespace RaceDay.Data
         // Authentication and role requests
         public DbSet<RoleRequest> RoleRequests { get; set; }
 
-        // RaceDay entities
+        // RaceDay database entities
         public DbSet<Organiser> Organisers { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<RaceCategory> RaceCategories { get; set; }
@@ -28,12 +29,14 @@ namespace RaceDay.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Preserve ASP.NET Identity configuration
             base.OnModelCreating(modelBuilder);
 
-            // Organiser: one organiser has many events
+            // ORGANISER
             modelBuilder.Entity<Organiser>(entity =>
             {
-                entity.HasIndex(o => o.Email).IsUnique();
+                entity.HasIndex(o => o.Email)
+                    .IsUnique();
 
                 entity.HasMany(o => o.Events)
                     .WithOne(e => e.Organiser)
@@ -41,7 +44,7 @@ namespace RaceDay.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Event: one event has many race categories
+            // EVENT
             modelBuilder.Entity<Event>(entity =>
             {
                 entity.Property(e => e.Status)
@@ -54,18 +57,21 @@ namespace RaceDay.Data
 
                 entity.ToTable(t =>
                 {
-                    t.HasCheckConstraint("CK_Event_Type",
+                    t.HasCheckConstraint(
+                        "CK_Event_Type",
                         "[Event_Type] IN ('Run', 'Walk', 'Cycle')");
 
-                    t.HasCheckConstraint("CK_Event_Status",
+                    t.HasCheckConstraint(
+                        "CK_Event_Status",
                         "[Status] IN ('Planned', 'Open', 'Closed', 'Completed', 'Cancelled')");
 
-                    t.HasCheckConstraint("CK_Event_Closing_Date",
+                    t.HasCheckConstraint(
+                        "CK_Event_Closing_Date",
                         "[Closing_Date] <= [Event_Date]");
                 });
             });
 
-            // Race Category
+            // RACE CATEGORY
             modelBuilder.Entity<RaceCategory>(entity =>
             {
                 entity.HasIndex(c => new
@@ -87,24 +93,29 @@ namespace RaceDay.Data
 
                 entity.ToTable(t =>
                 {
-                    t.HasCheckConstraint("CK_Race_Category_Distance",
+                    t.HasCheckConstraint(
+                        "CK_Race_Category_Distance",
                         "[Distance_KM] > 0");
 
-                    t.HasCheckConstraint("CK_Race_Category_Entry_Fee",
+                    t.HasCheckConstraint(
+                        "CK_Race_Category_Entry_Fee",
                         "[Entry_Fee] >= 0");
 
-                    t.HasCheckConstraint("CK_Race_Category_Max_Participants",
+                    t.HasCheckConstraint(
+                        "CK_Race_Category_Max_Participants",
                         "[Max_Participants] > 0");
 
-                    t.HasCheckConstraint("CK_Race_Category_Current_Participants",
+                    t.HasCheckConstraint(
+                        "CK_Race_Category_Current_Participants",
                         "[Current_Participants] >= 0 AND [Current_Participants] <= [Max_Participants]");
                 });
             });
 
-            // Participant: one participant has many enrollments
+            // PARTICIPANT
             modelBuilder.Entity<Participant>(entity =>
             {
-                entity.HasIndex(p => p.Email).IsUnique();
+                entity.HasIndex(p => p.Email)
+                    .IsUnique();
 
                 entity.HasMany(p => p.Enrollments)
                     .WithOne(e => e.Participant)
@@ -112,10 +123,11 @@ namespace RaceDay.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Enrollment
+            // ENROLLMENT
             modelBuilder.Entity<Enrollment>(entity =>
             {
-                entity.HasIndex(e => e.RaceNumber).IsUnique();
+                entity.HasIndex(e => e.RaceNumber)
+                    .IsUnique();
 
                 entity.HasIndex(e => new
                 {
@@ -129,11 +141,13 @@ namespace RaceDay.Data
                 entity.Property(e => e.EnrollmentStatus)
                     .HasDefaultValue("Pending");
 
+                // One enrollment can have multiple payments
                 entity.HasMany(e => e.Payments)
                     .WithOne(p => p.Enrollment)
                     .HasForeignKey(p => p.EnrollmentId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                // One enrollment can have one race result
                 entity.HasOne(e => e.RaceResult)
                     .WithOne(r => r.Enrollment)
                     .HasForeignKey<RaceResult>(r => r.EnrollmentId)
@@ -141,12 +155,16 @@ namespace RaceDay.Data
 
                 entity.ToTable(t =>
                 {
-                    t.HasCheckConstraint("CK_Enrollment_Status",
+                    // Required for SQL Server AFTER triggers
+                    t.UseSqlOutputClause(false);
+
+                    t.HasCheckConstraint(
+                        "CK_Enrollment_Status",
                         "[Enrollment_Status] IN ('Pending', 'Confirmed', 'Cancelled')");
                 });
             });
 
-            // Payment
+            // PAYMENT
             modelBuilder.Entity<Payment>(entity =>
             {
                 entity.Property(p => p.PaymentDate)
@@ -160,34 +178,41 @@ namespace RaceDay.Data
                     // Required for SQL Server AFTER triggers
                     t.UseSqlOutputClause(false);
 
-                    t.HasCheckConstraint("CK_Payment_Amount",
+                    t.HasCheckConstraint(
+                        "CK_Payment_Amount",
                         "[Amount] >= 0");
 
-                    t.HasCheckConstraint("CK_Payment_Status",
+                    t.HasCheckConstraint(
+                        "CK_Payment_Status",
                         "[Payment_Status] IN ('Pending', 'Paid', 'Failed', 'Refunded')");
                 });
             });
 
-            // Race Result: one result per enrollment
+            // RACE RESULT
             modelBuilder.Entity<RaceResult>(entity =>
             {
-                entity.HasIndex(r => r.EnrollmentId).IsUnique();
+                entity.HasIndex(r => r.EnrollmentId)
+                    .IsUnique();
 
                 entity.Property(r => r.ResultStatus)
                     .HasDefaultValue("Pending");
 
                 entity.ToTable(t =>
                 {
-                    t.HasCheckConstraint("CK_Race_Result_Time",
+                    t.HasCheckConstraint(
+                        "CK_Race_Result_Time",
                         "[Finish_Time] IS NULL OR [Start_Time] IS NULL OR [Finish_Time] >= [Start_Time]");
 
-                    t.HasCheckConstraint("CK_Race_Result_Position",
+                    t.HasCheckConstraint(
+                        "CK_Race_Result_Position",
                         "[Overall_Position] IS NULL OR [Overall_Position] > 0");
 
-                    t.HasCheckConstraint("CK_Race_Result_Status",
+                    t.HasCheckConstraint(
+                        "CK_Race_Result_Status",
                         "[Result_Status] IN ('Pending', 'Completed', 'Did Not Finish', 'Disqualified')");
 
-                    t.HasCheckConstraint("CK_Race_Result_Completed_Data",
+                    t.HasCheckConstraint(
+                        "CK_Race_Result_Completed_Data",
                         "[Result_Status] <> 'Completed' OR ([Start_Time] IS NOT NULL AND [Finish_Time] IS NOT NULL AND [Overall_Position] IS NOT NULL)");
                 });
             });

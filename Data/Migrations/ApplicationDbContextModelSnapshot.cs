@@ -275,6 +275,8 @@ namespace RaceDay.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_Enrollment_Status", "[Enrollment_Status] IN ('Pending', 'Confirmed', 'Cancelled')");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("RaceDay.Models.Event", b =>
