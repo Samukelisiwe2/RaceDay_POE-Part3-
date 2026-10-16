@@ -36,19 +36,19 @@ namespace RaceDay.Models
         [Column("Enrollment_Status")]
         public string EnrollmentStatus { get; set; } = "Pending";
 
-        // Each enrollment belongs to one participant.
+        // Each enrolment belongs to one participant.
         [ForeignKey(nameof(ParticipantId))]
         public Participant Participant { get; set; } = null!;
 
-        // Each enrollment belongs to one race category.
+        // Each enrolment belongs to one race category.
         [ForeignKey(nameof(CategoryId))]
         public RaceCategory RaceCategory { get; set; } = null!;
 
-        // One enrollment can have multiple payment attempts.
+        // One enrolment can have multiple payment attempts.
         public ICollection<Payment> Payments { get; set; }
             = new List<Payment>();
 
-        // One enrollment can have at most one race result.
+        // One enrolment can have at most one race result.
         public RaceResult? RaceResult { get; set; }
     }
 }

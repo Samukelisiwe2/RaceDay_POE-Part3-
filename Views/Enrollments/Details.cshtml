@@ -20,6 +20,22 @@
         @Model.Description
     </p>
 
+    <!-- Success Message -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <!-- Error Message -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
     <!-- Event Information -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -57,19 +73,27 @@
                 <dd class="col-sm-9">
                     @if (Model.Status == "Open")
                     {
-                        <span class="badge bg-success">Open</span>
+                        <span class="badge bg-success">
+                            Open
+                        </span>
                     }
                     else if (Model.Status == "Completed")
                     {
-                        <span class="badge bg-primary">Completed</span>
+                        <span class="badge bg-primary">
+                            Completed
+                        </span>
                     }
                     else if (Model.Status == "Cancelled")
                     {
-                        <span class="badge bg-danger">Cancelled</span>
+                        <span class="badge bg-danger">
+                            Cancelled
+                        </span>
                     }
                     else if (Model.Status == "Closed")
                     {
-                        <span class="badge bg-warning text-dark">Closed</span>
+                        <span class="badge bg-warning text-dark">
+                            Closed
+                        </span>
                     }
                     else
                     {
@@ -84,7 +108,8 @@
     </div>
 
     <!-- Race Categories -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex flex-wrap justify-content-between
+        align-items-center gap-2 mb-3">
 
         <h3 class="mb-0">Race Categories</h3>
 
@@ -97,11 +122,12 @@
 
     </div>
 
-    @if (Model.RaceCategories != null && Model.RaceCategories.Any())
+    @if (Model.RaceCategories != null &&
+         Model.RaceCategories.Any())
     {
         <div class="table-responsive mb-4">
 
-            <table class="table table-striped align-middle">
+            <table class="table table-striped table-hover align-middle">
 
                 <thead>
                     <tr>
@@ -113,7 +139,8 @@
                 </thead>
 
                 <tbody>
-                    @foreach (var category in Model.RaceCategories)
+                    @foreach (var category in
+                        Model.RaceCategories.OrderBy(c => c.DistanceKm))
                     {
                         <tr>
                             <td>@category.CategoryName</td>
@@ -144,12 +171,10 @@
         </div>
     }
 
-    <!-- ======================================== -->
-    <!-- PARTICIPANT ACTIONS                      -->
-    <!-- ======================================== -->
+    <!-- PARTICIPANT ACTIONS -->
     @if (isParticipant)
     {
-        <div class="mb-3 d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 mb-3">
 
             @if (registrationOpen &&
                  Model.RaceCategories != null &&
@@ -185,13 +210,10 @@
         </div>
     }
 
-    <!-- ======================================== -->
-    <!-- ORGANISER ACTIONS                        -->
-    <!-- ======================================== -->
+    <!-- ORGANISER ACTIONS -->
     @if (isOrganiser)
     {
-        <!-- Enrolment and Results Buttons -->
-        <div class="mb-3 d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 mb-3">
 
             <a asp-controller="Enrollments"
                asp-action="EventEnrollments"
@@ -209,8 +231,7 @@
 
         </div>
 
-        <!-- Event Management Buttons -->
-        <div class="mb-3 d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 mb-3">
 
             <a asp-controller="Events"
                asp-action="Edit"

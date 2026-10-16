@@ -1,4 +1,7 @@
 ﻿
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +27,8 @@ namespace RaceDay.Controllers
             _userManager = userManager;
         }
 
-        // Show the race-entry form to Participants.
+        // GET: Enrollments/Create?eventId=1
+        // Participants can register for open events.
         [HttpGet]
         [Authorize(Roles = "Participant")]
         public async Task<IActionResult> Create(int eventId)
@@ -43,19 +47,24 @@ namespace RaceDay.Controllers
                     "Registration is closed for this event.";
 
                 return RedirectToAction(
-                    "Details", "Events", new { id = eventId });
+                    "Details",
+                    "Events",
+                    new { id = eventId });
             }
 
             await LoadCategoriesAsync(eventId);
 
-            return View(new EnrollmentFormViewModel
+            var model = new EnrollmentFormViewModel
             {
                 EventId = eventId,
                 EventName = raceEvent.EventName
-            });
+            };
+
+            return View(model);
         }
 
-        // Register the Participant for a selected category.
+        // POST: Enrollments/Create?eventId=1
+        // Save a Participant's race registration.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Participant")]
@@ -63,8 +72,8 @@ namespace RaceDay.Controllers
             int eventId,
             EnrollmentFormViewModel model)
         {
-            // The event ID must come from the URL.
             model.EventId = eventId;
+
             ModelState.Remove(nameof(model.EventId));
             ModelState.Remove(nameof(model.EventName));
 
@@ -81,7 +90,7 @@ namespace RaceDay.Controllers
                 raceEvent.ClosingDate.Date < DateTime.Today)
             {
                 ModelState.AddModelError(
-                    "",
+                    string.Empty,
                     "Registration is closed for this event.");
             }
 
@@ -95,7 +104,7 @@ namespace RaceDay.Controllers
             {
                 ModelState.AddModelError(
                     nameof(model.CategoryId),
-                    "Please select a valid category.");
+                    "Please select a valid race category.");
             }
             else if (category.CurrentParticipants >=
                      category.MaxParticipants)
@@ -110,7 +119,6 @@ namespace RaceDay.Controllers
             if (user?.Email == null)
                 return Challenge();
 
-            // Find the Participant profile linked to Identity.
             var participant = await _context.Participants
                 .FirstOrDefaultAsync(p => p.Email == user.Email);
 
@@ -120,9 +128,11 @@ namespace RaceDay.Controllers
                     "Complete your Participant Profile first.";
 
                 return RedirectToAction(
-                    "ParticipantProfile", "Profile");
+                    "ParticipantProfile",
+                    "Profile");
             }
 
+            // Prevent duplicate category registrations.
             bool alreadyEnrolled = await _context.Enrollments
                 .AnyAsync(e =>
                     e.ParticipantId == participant.ParticipantId &&
@@ -138,13 +148,17 @@ namespace RaceDay.Controllers
             if (!ModelState.IsValid)
             {
                 await LoadCategoriesAsync(eventId);
+
                 return View(model);
             }
 
-            // Generate a unique race number.
+            // Generate a race number automatically.
             string raceNumber =
-                "RD-" + Guid.NewGuid().ToString("N")
-                    .Substring(0, 12).ToUpperInvariant();
+                "RD-" +
+                Guid.NewGuid()
+                    .ToString("N")
+                    .Substring(0, 12)
+                    .ToUpperInvariant();
 
             var enrollment = new Enrollment
             {
@@ -159,8 +173,8 @@ namespace RaceDay.Controllers
 
             try
             {
-                // SQL Server capacity trigger performs
-                // the final capacity check.
+                // The SQL Server capacity trigger provides
+                // the final capacity validation.
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
@@ -170,12 +184,13 @@ namespace RaceDay.Controllers
                        sql.Number == 2627))
             {
                 ModelState.AddModelError(
-                    "",
+                    string.Empty,
                     "Registration could not be completed. " +
                     "The category may be full or you may " +
                     "already be registered.");
 
                 await LoadCategoriesAsync(eventId);
+
                 return View(model);
             }
 
@@ -185,7 +200,8 @@ namespace RaceDay.Controllers
             return RedirectToAction(nameof(MyEnrollments));
         }
 
-        // Show the logged-in Participant's registrations.
+        // GET: Enrollments/MyEnrollments
+        // Participants view only their own registrations.
         [HttpGet]
         [Authorize(Roles = "Participant")]
         public async Task<IActionResult> MyEnrollments()
@@ -205,7 +221,8 @@ namespace RaceDay.Controllers
                     "Complete your Participant Profile first.";
 
                 return RedirectToAction(
-                    "ParticipantProfile", "Profile");
+                    "ParticipantProfile",
+                    "Profile");
             }
 
             var enrollments = await _context.Enrollments
@@ -220,7 +237,8 @@ namespace RaceDay.Controllers
             return View(enrollments);
         }
 
-        // Allow Organisers to view entries for owned events.
+        // GET: Enrollments/EventEnrollments?eventId=1
+        // Organisers view registrations for their own events.
         [HttpGet]
         [Authorize(Roles = "Organiser")]
         public async Task<IActionResult> EventEnrollments(
@@ -239,6 +257,7 @@ namespace RaceDay.Controllers
             if (raceEvent == null)
                 return NotFound();
 
+            // Prevent access to another Organiser's entries.
             if (raceEvent.Organiser.Email != user.Email)
                 return Forbid();
 
@@ -247,16 +266,27 @@ namespace RaceDay.Controllers
 
             var enrollments = await _context.Enrollments
                 .AsNoTracking()
+
+                // Load Participant information.
                 .Include(e => e.Participant)
+
+                // Load selected Race Category.
                 .Include(e => e.RaceCategory)
-                .Where(e => e.RaceCategory.EventId == eventId)
+
+                // Load the existing Race Result, if any.
+                // Needed for Capture Result / Edit Result.
+                .Include(e => e.RaceResult)
+
+                .Where(e =>
+                    e.RaceCategory.EventId == eventId)
                 .OrderBy(e => e.RaceCategory.CategoryName)
+                .ThenBy(e => e.Participant.LastName)
                 .ToListAsync();
 
             return View(enrollments);
         }
 
-        // Load available categories for the form.
+        // Load available categories for registration.
         private async Task LoadCategoriesAsync(int eventId)
         {
             var categories = await _context.RaceCategories
@@ -271,6 +301,7 @@ namespace RaceDay.Controllers
                 categories.Select(c => new
                 {
                     c.CategoryId,
+
                     Name = c.CategoryName + " - " +
                            c.DistanceKm.ToString("0.##") +
                            " km - R" +

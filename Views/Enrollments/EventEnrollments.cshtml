@@ -2,7 +2,10 @@
 
 @{
     ViewData["Title"] = "Event Enrolments";
-    int eventId = (int)ViewBag.EventId;
+
+    int eventId = ViewBag.EventId != null
+        ? Convert.ToInt32(ViewBag.EventId)
+        : 0;
 }
 
 <div class="container mt-4">
@@ -13,6 +16,20 @@
         Registrations for @ViewBag.EventName
     </p>
 
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
     @if (!Model.Any())
     {
         <div class="alert alert-info">
@@ -22,8 +39,8 @@
     else
     {
         <div class="table-responsive">
-            <table class="table table-striped table-hover align-middle">
 
+            <table class="table table-striped table-hover align-middle">
                 <thead>
                     <tr>
                         <th>Participant</th>
@@ -32,6 +49,7 @@
                         <th>Race Number</th>
                         <th>Enrolment Date</th>
                         <th>Status</th>
+                        <th>Result</th>
                     </tr>
                 </thead>
 
@@ -46,7 +64,9 @@
 
                             <td>@entry.Participant.Email</td>
 
-                            <td>@entry.RaceCategory.CategoryName</td>
+                            <td>
+                                @entry.RaceCategory.CategoryName
+                            </td>
 
                             <td>@entry.RaceNumber</td>
 
@@ -55,23 +75,70 @@
                             </td>
 
                             <td>
-                                <span class="badge bg-secondary">
-                                    @entry.EnrollmentStatus
-                                </span>
+                                @if (entry.EnrollmentStatus == "Confirmed")
+                                {
+                                    <span class="badge bg-success">
+                                        Confirmed
+                                    </span>
+                                }
+                                else if (entry.EnrollmentStatus == "Cancelled")
+                                {
+                                    <span class="badge bg-danger">
+                                        Cancelled
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        @entry.EnrollmentStatus
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (entry.RaceResult == null)
+                                {
+                                    <a asp-controller="Results"
+                                       asp-action="Create"
+                                       asp-route-enrollmentId="@entry.EnrollmentId"
+                                       class="btn btn-primary btn-sm">
+                                        Capture Result
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Results"
+                                       asp-action="Edit"
+                                       asp-route-id="@entry.RaceResult.ResultId"
+                                       class="btn btn-warning btn-sm">
+                                        Edit Result
+                                    </a>
+                                }
                             </td>
                         </tr>
                     }
                 </tbody>
-
             </table>
+
         </div>
     }
 
-    <a asp-controller="Events"
-       asp-action="Details"
-       asp-route-id="@eventId"
-       class="btn btn-outline-secondary">
-        Back to Event
-    </a>
+    <div class="mt-3 d-flex flex-wrap gap-2">
+
+        <a asp-controller="Events"
+           asp-action="Details"
+           asp-route-id="@eventId"
+           class="btn btn-outline-secondary">
+            Back to Event
+        </a>
+
+        <a asp-controller="Results"
+           asp-action="EventResults"
+           asp-route-eventId="@eventId"
+           class="btn btn-outline-primary">
+            View Race Results
+        </a>
+
+    </div>
 
 </div>
