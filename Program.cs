@@ -1,5 +1,4 @@
 
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
@@ -25,13 +24,12 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 // 2. ASP.NET CORE IDENTITY
 // ==========================================
 
-builder.Services.AddDefaultIdentity<IdentityUser>(
-    options =>
-    {
-        options.SignIn.RequireConfirmedAccount = true;
-    })
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+})
+.AddRoles<IdentityRole>()
+.AddEntityFrameworkStores<ApplicationDbContext>();
 
 // ==========================================
 // 3. MVC AND RAZOR PAGES
@@ -41,7 +39,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
 // ==========================================
-// 4. SWAGGER INTEGRATION
+// 4. SWAGGER CONFIGURATION
 // ==========================================
 
 builder.Services.AddEndpointsApiExplorer();
@@ -54,9 +52,9 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1",
         Description =
             "RaceDay API documentation for PROG6212 Part 2. " +
-            "The system supports authentication, user profiles, " +
+            "The API supports authentication, user profiles, " +
             "race events, categories, participant enrolments, " +
-            "race results and role-based access control."
+            "race results and role-based authorization."
     });
 });
 
@@ -67,11 +65,12 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // ==========================================
-// 6. INTEGRATION TESTING CONFIGURATION
+// 6. INTEGRATION TEST CONFIGURATION
 // ==========================================
 
-// Integration tests use a separate database setup.
-// Skip normal migrations and seeding in test mode.
+// Integration tests use an isolated SQLite database.
+// Skip SQL Server migrations and Admin seeding
+// while integration tests are running.
 
 var isIntegrationTest =
     app.Configuration.GetValue<bool>(
@@ -83,73 +82,94 @@ var isIntegrationTest =
 
 if (!isIntegrationTest)
 {
-    using (var scope = app.Services.CreateScope())
+    using var scope = app.Services.CreateScope();
+
+    var services = scope.ServiceProvider;
+
+    var db = services
+        .GetRequiredService<ApplicationDbContext>();
+
+    // Apply pending SQL Server migrations.
+    await db.Database.MigrateAsync();
+
+    // ======================================
+    // CREATE APPLICATION ROLES
+    // ======================================
+
+    var roleManager = services
+        .GetRequiredService<RoleManager<IdentityRole>>();
+
+    string[] roles =
     {
-        var services = scope.ServiceProvider;
+        "Admin",
+        "Organiser",
+        "Participant"
+    };
 
-        var db =
-            services.GetRequiredService<ApplicationDbContext>();
-
-        // Apply pending SQL Server migrations.
-        await db.Database.MigrateAsync();
-
-        // Create application roles if missing.
-        var roleManager =
-            services.GetRequiredService<RoleManager<IdentityRole>>();
-
-        var roles = new[]
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
         {
-            "Admin",
-            "Organiser",
-            "Participant"
-        };
+            var roleResult =
+                await roleManager.CreateAsync(
+                    new IdentityRole(role));
 
-        foreach (var role in roles)
-        {
-            if (!await roleManager.RoleExistsAsync(role))
+            if (!roleResult.Succeeded)
             {
-                var roleResult =
-                    await roleManager.CreateAsync(
-                        new IdentityRole(role));
-
-                if (!roleResult.Succeeded)
-                {
-                    throw new InvalidOperationException(
-                        $"Failed to create role '{role}': " +
-                        string.Join(", ",
-                            roleResult.Errors.Select(
-                                e => e.Description)));
-                }
+                throw new InvalidOperationException(
+                    $"Failed to create role '{role}': " +
+                    string.Join(", ",
+                        roleResult.Errors.Select(
+                            e => e.Description)));
             }
         }
+    }
 
-        // ======================================
-        // 8. ADMIN ACCOUNT SEEDING
-        // ======================================
+    // ======================================
+    // 8. ADMIN ACCOUNT SEEDING
+    // ======================================
 
-        var userManager =
-            services.GetRequiredService<UserManager<IdentityUser>>();
+    var userManager = services
+        .GetRequiredService<UserManager<IdentityUser>>();
 
-        string email = "admin@admin.com";
-        string password = "Admin@123";
+    // Admin credentials are loaded from configuration.
+    // Do not store passwords directly in source code.
 
-        var user =
-            await userManager.FindByEmailAsync(email);
+    string? adminEmail =
+        app.Configuration["SeedAdmin:Email"];
 
-        // Create Admin account if it doesn't exist.
-        if (user == null)
+    string? adminPassword =
+        app.Configuration["SeedAdmin:Password"];
+
+    // Only seed an Admin when an email is configured.
+    if (!string.IsNullOrWhiteSpace(adminEmail))
+    {
+        var adminUser =
+            await userManager.FindByEmailAsync(adminEmail);
+
+        // Create an Admin only if the account
+        // does not already exist.
+
+        if (adminUser == null)
         {
-            user = new IdentityUser
+            if (string.IsNullOrWhiteSpace(adminPassword))
             {
-                UserName = email,
-                Email = email,
+                throw new InvalidOperationException(
+                    "SeedAdmin:Password must be configured " +
+                    "before creating an Admin account.");
+            }
+
+            adminUser = new IdentityUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
                 EmailConfirmed = true
             };
 
             var createResult =
                 await userManager.CreateAsync(
-                    user,
-                    password);
+                    adminUser,
+                    adminPassword);
 
             if (!createResult.Succeeded)
             {
@@ -161,13 +181,16 @@ if (!isIntegrationTest)
             }
         }
 
-        // Assign Admin role if missing.
+        // Ensure the configured Admin account
+        // has the Admin role.
+
         if (!await userManager.IsInRoleAsync(
-            user, "Admin"))
+            adminUser, "Admin"))
         {
             var roleResult =
                 await userManager.AddToRoleAsync(
-                    user, "Admin");
+                    adminUser,
+                    "Admin");
 
             if (!roleResult.Succeeded)
             {
@@ -192,7 +215,7 @@ if (app.Environment.IsDevelopment())
         app.UseMigrationsEndPoint();
     }
 
-    // Swagger documentation.
+    // Enable Swagger in Development.
     app.UseSwagger();
 
     app.UseSwaggerUI(options =>
@@ -212,31 +235,30 @@ else
 }
 
 // ==========================================
-// 10. MIDDLEWARE CONFIGURATION
+// 10. MIDDLEWARE
 // ==========================================
 
 app.UseHttpsRedirection();
 
 app.UseRouting();
 
-// Authentication must come before authorization.
+// Authentication must run before authorization.
 app.UseAuthentication();
 app.UseAuthorization();
 
 // ==========================================
-// 11. STATIC FILES AND ROUTING
+// 11. ROUTING
 // ==========================================
 
-// Serve static assets.
 app.MapStaticAssets();
 
-// MVC controllers and Razor views.
+// MVC controllers and views.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// Identity Razor Pages.
+// ASP.NET Core Identity Razor Pages.
 app.MapRazorPages()
     .WithStaticAssets();
 
@@ -249,8 +271,7 @@ app.MapControllers();
 
 app.Run();
 
-// Allows WebApplicationFactory<Program>
-// to access the application entry point.
+// Required for WebApplicationFactory integration tests.
 public partial class Program
 {
 }
