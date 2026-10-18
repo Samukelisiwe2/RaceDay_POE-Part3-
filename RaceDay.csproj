@@ -7,11 +7,18 @@
     <UserSecretsId>aspnet-RaceDay-0486d083-8a66-452a-97ff-265f787d0a86</UserSecretsId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Data\ApplicationUser.cs" />
-  </ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Data\ApplicationUser.cs" />
+
+		<!-- Exclude the separate test project from the main app -->
+		<Compile Remove="RaceDay.Tests\**\*.cs" />
+		<EmbeddedResource Remove="RaceDay.Tests\**\*" />
+		<None Remove="RaceDay.Tests\**\*" />
+	</ItemGroup>
+
+
+	<ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.13" />

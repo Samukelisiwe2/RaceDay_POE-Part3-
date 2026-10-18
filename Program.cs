@@ -1,4 +1,5 @@
 
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
@@ -66,109 +67,132 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // ==========================================
-// 6. DATABASE MIGRATIONS AND ROLE SEEDING
+// 6. INTEGRATION TESTING CONFIGURATION
 // ==========================================
 
-using (var scope = app.Services.CreateScope())
+// Integration tests use a separate database setup.
+// Skip normal migrations and seeding in test mode.
+
+var isIntegrationTest =
+    app.Configuration.GetValue<bool>(
+        "RaceDay:IntegrationTesting");
+
+// ==========================================
+// 7. DATABASE MIGRATIONS AND ROLE SEEDING
+// ==========================================
+
+if (!isIntegrationTest)
 {
-    var services = scope.ServiceProvider;
-
-    var db =
-        services.GetRequiredService<ApplicationDbContext>();
-
-    // Automatically apply pending migrations.
-    await db.Database.MigrateAsync();
-
-    // Create application roles if missing.
-    var roleManager =
-        services.GetRequiredService<RoleManager<IdentityRole>>();
-
-    var roles = new[]
+    using (var scope = app.Services.CreateScope())
     {
-        "Admin",
-        "Organiser",
-        "Participant"
-    };
+        var services = scope.ServiceProvider;
 
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
+        var db =
+            services.GetRequiredService<ApplicationDbContext>();
+
+        // Apply pending SQL Server migrations.
+        await db.Database.MigrateAsync();
+
+        // Create application roles if missing.
+        var roleManager =
+            services.GetRequiredService<RoleManager<IdentityRole>>();
+
+        var roles = new[]
         {
-            var roleResult = await roleManager.CreateAsync(
-                new IdentityRole(role));
+            "Admin",
+            "Organiser",
+            "Participant"
+        };
+
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                var roleResult =
+                    await roleManager.CreateAsync(
+                        new IdentityRole(role));
+
+                if (!roleResult.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to create role '{role}': " +
+                        string.Join(", ",
+                            roleResult.Errors.Select(
+                                e => e.Description)));
+                }
+            }
+        }
+
+        // ======================================
+        // 8. ADMIN ACCOUNT SEEDING
+        // ======================================
+
+        var userManager =
+            services.GetRequiredService<UserManager<IdentityUser>>();
+
+        string email = "admin@admin.com";
+        string password = "Admin@123";
+
+        var user =
+            await userManager.FindByEmailAsync(email);
+
+        // Create Admin account if it doesn't exist.
+        if (user == null)
+        {
+            user = new IdentityUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true
+            };
+
+            var createResult =
+                await userManager.CreateAsync(
+                    user,
+                    password);
+
+            if (!createResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Failed to create Admin account: " +
+                    string.Join(", ",
+                        createResult.Errors.Select(
+                            e => e.Description)));
+            }
+        }
+
+        // Assign Admin role if missing.
+        if (!await userManager.IsInRoleAsync(
+            user, "Admin"))
+        {
+            var roleResult =
+                await userManager.AddToRoleAsync(
+                    user, "Admin");
 
             if (!roleResult.Succeeded)
             {
                 throw new InvalidOperationException(
-                    $"Failed to create role '{role}': " +
+                    "Failed to assign Admin role: " +
                     string.Join(", ",
                         roleResult.Errors.Select(
                             e => e.Description)));
             }
         }
     }
-
-    // ======================================
-    // 7. ADMIN ACCOUNT SEEDING
-    // ======================================
-
-    var userManager =
-        services.GetRequiredService<UserManager<IdentityUser>>();
-
-    string email = "admin@admin.com";
-    string password = "Admin@123";
-
-    var user = await userManager.FindByEmailAsync(email);
-
-    // Create the Admin account if it doesn't exist.
-    if (user == null)
-    {
-        user = new IdentityUser
-        {
-            UserName = email,
-            Email = email,
-            EmailConfirmed = true
-        };
-
-        var createResult =
-            await userManager.CreateAsync(user, password);
-
-        if (!createResult.Succeeded)
-        {
-            throw new InvalidOperationException(
-                "Failed to create Admin account: " +
-                string.Join(", ",
-                    createResult.Errors.Select(
-                        e => e.Description)));
-        }
-    }
-
-    // Assign Admin role if missing.
-    if (!await userManager.IsInRoleAsync(user, "Admin"))
-    {
-        var roleResult =
-            await userManager.AddToRoleAsync(user, "Admin");
-
-        if (!roleResult.Succeeded)
-        {
-            throw new InvalidOperationException(
-                "Failed to assign Admin role: " +
-                string.Join(", ",
-                    roleResult.Errors.Select(
-                        e => e.Description)));
-        }
-    }
 }
 
 // ==========================================
-// 8. HTTP REQUEST PIPELINE
+// 9. HTTP REQUEST PIPELINE
 // ==========================================
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseMigrationsEndPoint();
+    if (!isIntegrationTest)
+    {
+        app.UseMigrationsEndPoint();
+    }
 
-    // Enable Swagger documentation in development.
+    // Swagger documentation.
     app.UseSwagger();
 
     app.UseSwaggerUI(options =>
@@ -188,7 +212,7 @@ else
 }
 
 // ==========================================
-// 9. MIDDLEWARE CONFIGURATION
+// 10. MIDDLEWARE CONFIGURATION
 // ==========================================
 
 app.UseHttpsRedirection();
@@ -200,34 +224,33 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // ==========================================
-// 10. STATIC FILES AND APPLICATION ROUTING
+// 11. STATIC FILES AND ROUTING
 // ==========================================
 
 // Serve static assets.
 app.MapStaticAssets();
 
-// MVC Controllers and Razor Views.
+// MVC controllers and Razor views.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// ASP.NET Core Identity Razor Pages.
+// Identity Razor Pages.
 app.MapRazorPages()
     .WithStaticAssets();
 
-// Attribute-routed API Controllers.
+// Attribute-routed API controllers.
 app.MapControllers();
 
 // ==========================================
-// 11. START RACEDAY
+// 12. START RACEDAY
 // ==========================================
 
 app.Run();
 
-// Supports future integration testing
-// using WebApplicationFactory<Program>.
+// Allows WebApplicationFactory<Program>
+// to access the application entry point.
 public partial class Program
 {
 }
-

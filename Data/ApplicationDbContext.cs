@@ -1,5 +1,7 @@
 ﻿
 
+
+using System;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +17,12 @@ namespace RaceDay.Data
         {
         }
 
-        // Authentication and role requests
+        // =====================================
+        // DATABASE TABLES
+        // =====================================
+
         public DbSet<RoleRequest> RoleRequests { get; set; }
 
-        // RaceDay database entities
         public DbSet<Organiser> Organisers { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<RaceCategory> RaceCategories { get; set; }
@@ -27,12 +31,22 @@ namespace RaceDay.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<RaceResult> RaceResults { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(
+            ModelBuilder modelBuilder)
         {
-            // Preserve ASP.NET Identity configuration
             base.OnModelCreating(modelBuilder);
 
+            // Detect SQLite without requiring its package
+            // in the main RaceDay project.
+            bool isSqlite = string.Equals(
+                Database.ProviderName,
+                "Microsoft.EntityFrameworkCore.Sqlite",
+                StringComparison.OrdinalIgnoreCase);
+
+            // =====================================
             // ORGANISER
+            // =====================================
+
             modelBuilder.Entity<Organiser>(entity =>
             {
                 entity.HasIndex(o => o.Email)
@@ -44,7 +58,10 @@ namespace RaceDay.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // =====================================
             // EVENT
+            // =====================================
+
             modelBuilder.Entity<Event>(entity =>
             {
                 entity.Property(e => e.Status)
@@ -71,14 +88,18 @@ namespace RaceDay.Data
                 });
             });
 
+            // =====================================
             // RACE CATEGORY
+            // =====================================
+
             modelBuilder.Entity<RaceCategory>(entity =>
             {
                 entity.HasIndex(c => new
                 {
                     c.EventId,
                     c.CategoryName
-                }).IsUnique();
+                })
+                .IsUnique();
 
                 entity.Property(c => c.EntryFee)
                     .HasDefaultValue(0.00m);
@@ -111,7 +132,10 @@ namespace RaceDay.Data
                 });
             });
 
+            // =====================================
             // PARTICIPANT
+            // =====================================
+
             modelBuilder.Entity<Participant>(entity =>
             {
                 entity.HasIndex(p => p.Email)
@@ -123,31 +147,39 @@ namespace RaceDay.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // =====================================
             // ENROLLMENT
+            // =====================================
+
             modelBuilder.Entity<Enrollment>(entity =>
             {
                 entity.HasIndex(e => e.RaceNumber)
                     .IsUnique();
 
+                // Prevent duplicate participant/category entries.
                 entity.HasIndex(e => new
                 {
                     e.ParticipantId,
                     e.CategoryId
-                }).IsUnique();
+                })
+                .IsUnique();
 
+                // SQL Server uses CONVERT / GETDATE.
+                // SQLite uses CURRENT_DATE.
                 entity.Property(e => e.EnrollmentDate)
-                    .HasDefaultValueSql("CONVERT(date, GETDATE())");
+                    .HasDefaultValueSql(
+                        isSqlite
+                            ? "CURRENT_DATE"
+                            : "CONVERT(date, GETDATE())");
 
                 entity.Property(e => e.EnrollmentStatus)
                     .HasDefaultValue("Pending");
 
-                // One enrollment can have multiple payments
                 entity.HasMany(e => e.Payments)
                     .WithOne(p => p.Enrollment)
                     .HasForeignKey(p => p.EnrollmentId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // One enrollment can have one race result
                 entity.HasOne(e => e.RaceResult)
                     .WithOne(r => r.Enrollment)
                     .HasForeignKey<RaceResult>(r => r.EnrollmentId)
@@ -155,8 +187,11 @@ namespace RaceDay.Data
 
                 entity.ToTable(t =>
                 {
-                    // Required for SQL Server AFTER triggers
-                    t.UseSqlOutputClause(false);
+                    // SQL Server AFTER-trigger compatibility.
+                    if (!isSqlite)
+                    {
+                        t.UseSqlOutputClause(false);
+                    }
 
                     t.HasCheckConstraint(
                         "CK_Enrollment_Status",
@@ -164,19 +199,27 @@ namespace RaceDay.Data
                 });
             });
 
+            // =====================================
             // PAYMENT
+            // =====================================
+
             modelBuilder.Entity<Payment>(entity =>
             {
                 entity.Property(p => p.PaymentDate)
-                    .HasDefaultValueSql("CONVERT(date, GETDATE())");
+                    .HasDefaultValueSql(
+                        isSqlite
+                            ? "CURRENT_DATE"
+                            : "CONVERT(date, GETDATE())");
 
                 entity.Property(p => p.PaymentStatus)
                     .HasDefaultValue("Pending");
 
                 entity.ToTable(t =>
                 {
-                    // Required for SQL Server AFTER triggers
-                    t.UseSqlOutputClause(false);
+                    if (!isSqlite)
+                    {
+                        t.UseSqlOutputClause(false);
+                    }
 
                     t.HasCheckConstraint(
                         "CK_Payment_Amount",
@@ -188,7 +231,10 @@ namespace RaceDay.Data
                 });
             });
 
+            // =====================================
             // RACE RESULT
+            // =====================================
+
             modelBuilder.Entity<RaceResult>(entity =>
             {
                 entity.HasIndex(r => r.EnrollmentId)
