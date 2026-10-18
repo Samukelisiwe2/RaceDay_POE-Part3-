@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -12,34 +13,69 @@ using RaceDay.Models;
 
 namespace RaceDay.Controllers
 {
-    // Request body for creating and updating events.
+    /// <summary>
+    /// Information required when creating or updating a race event.
+    /// </summary>
     public class EventApiRequest : IValidatableObject
     {
+        /// <summary>
+        /// Name of the race event.
+        /// </summary>
+        /// <example>Durban Coastal Run</example>
         [Required]
         [StringLength(150)]
         public string EventName { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Description of the event.
+        /// </summary>
+        /// <example>A community running event in Durban.</example>
         [Required]
         public string Description { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Date on which the event takes place.
+        /// </summary>
         [Required]
         public DateTime EventDate { get; set; }
 
+        /// <summary>
+        /// Final date for race registrations.
+        /// Must not be later than the event date.
+        /// </summary>
         [Required]
         public DateTime ClosingDate { get; set; }
 
+        /// <summary>
+        /// Location where the race will take place.
+        /// </summary>
+        /// <example>Durban</example>
         [Required]
         public string Location { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Type of sporting event.
+        /// Allowed values: Run, Walk or Cycle.
+        /// </summary>
+        /// <example>Run</example>
         [Required]
         [RegularExpression("^(Run|Walk|Cycle)$")]
         public string EventType { get; set; } = "Run";
 
+        /// <summary>
+        /// Current status of the event.
+        /// Allowed values: Planned, Open, Closed,
+        /// Completed or Cancelled.
+        /// </summary>
+        /// <example>Open</example>
         [Required]
         [RegularExpression(
             "^(Planned|Open|Closed|Completed|Cancelled)$")]
         public string Status { get; set; } = "Planned";
 
+        /// <summary>
+        /// Checks that the event information is valid.
+        /// </summary>
         public IEnumerable<ValidationResult> Validate(
             ValidationContext validationContext)
         {
@@ -82,6 +118,9 @@ namespace RaceDay.Controllers
         }
     }
 
+    /// <summary>
+    /// API endpoints used by Organisers to manage race events.
+    /// </summary>
     [ApiController]
     [Route("api/events")]
     [Authorize(Roles = "Organiser")]
@@ -99,8 +138,45 @@ namespace RaceDay.Controllers
             _userManager = userManager;
         }
 
+        // ==========================================
         // POST: api/events
-        // Create a new event for the logged-in Organiser.
+        // ==========================================
+
+        /// <summary>
+        /// Create a new race event.
+        /// </summary>
+        /// <remarks>
+        /// Creates a race event for the logged-in Organiser.
+        ///
+        /// The Organiser must have a completed profile.
+        ///
+        /// Required information includes the event name,
+        /// description, event date, registration closing date,
+        /// location, event type and status.
+        ///
+        /// The closing date cannot be after the event date.
+        ///
+        /// Only users with the Organiser role can create events.
+        /// </remarks>
+        /// <param name="request">
+        /// Information about the event to create.
+        /// </param>
+        /// <returns>
+        /// The newly created event and its generated event ID.
+        /// </returns>
+        /// <response code="201">
+        /// The race event was created successfully.
+        /// </response>
+        /// <response code="400">
+        /// Invalid event information or the Organiser
+        /// profile has not been completed.
+        /// </response>
+        /// <response code="401">
+        /// The user is not authenticated.
+        /// </response>
+        /// <response code="403">
+        /// The user does not have the Organiser role.
+        /// </response>
         [HttpPost]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -150,8 +226,47 @@ namespace RaceDay.Controllers
                 });
         }
 
-        // PUT: api/events/1
-        // Update only events owned by this Organiser.
+        // ==========================================
+        // PUT: api/events/{id}
+        // ==========================================
+
+        /// <summary>
+        /// Update an existing race event.
+        /// </summary>
+        /// <remarks>
+        /// Updates an event using its ID.
+        ///
+        /// Only the Organiser who owns the event can
+        /// change its information.
+        ///
+        /// The request must contain valid event details.
+        /// If the event belongs to another Organiser,
+        /// access is denied.
+        /// </remarks>
+        /// <param name="id">
+        /// ID of the event that must be updated.
+        /// </param>
+        /// <param name="request">
+        /// Updated race event information.
+        /// </param>
+        /// <returns>
+        /// The updated event information.
+        /// </returns>
+        /// <response code="200">
+        /// The event was updated successfully.
+        /// </response>
+        /// <response code="400">
+        /// The supplied event information is invalid.
+        /// </response>
+        /// <response code="401">
+        /// The user is not authenticated.
+        /// </response>
+        /// <response code="403">
+        /// The user is not allowed to modify this event.
+        /// </response>
+        /// <response code="404">
+        /// The event could not be found.
+        /// </response>
         [HttpPut("{id:int}")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -175,7 +290,9 @@ namespace RaceDay.Controllers
             }
 
             if (!await OwnsEventAsync(raceEvent.OrganiserId))
+            {
                 return Forbid();
+            }
 
             raceEvent.EventName = request.EventName.Trim();
             raceEvent.Description = request.Description.Trim();
@@ -201,8 +318,45 @@ namespace RaceDay.Controllers
             });
         }
 
-        // DELETE: api/events/1
-        // Protect events that have categories or registrations.
+        // ==========================================
+        // DELETE: api/events/{id}
+        // ==========================================
+
+        /// <summary>
+        /// Delete an existing race event.
+        /// </summary>
+        /// <remarks>
+        /// Deletes an event owned by the logged-in Organiser.
+        ///
+        /// The event cannot be deleted if it already
+        /// contains race categories.
+        ///
+        /// This prevents accidental removal of events
+        /// that have related category information.
+        /// </remarks>
+        /// <param name="id">
+        /// ID of the event that must be deleted.
+        /// </param>
+        /// <returns>
+        /// No content when the event is successfully deleted.
+        /// </returns>
+        /// <response code="204">
+        /// The event was deleted successfully.
+        /// </response>
+        /// <response code="401">
+        /// The user is not authenticated.
+        /// </response>
+        /// <response code="403">
+        /// The user does not own this event or does not
+        /// have the Organiser role.
+        /// </response>
+        /// <response code="404">
+        /// The event could not be found.
+        /// </response>
+        /// <response code="409">
+        /// The event cannot be deleted because it has
+        /// associated race categories.
+        /// </response>
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -223,7 +377,9 @@ namespace RaceDay.Controllers
             }
 
             if (!await OwnsEventAsync(raceEvent.OrganiserId))
+            {
                 return Forbid();
+            }
 
             bool hasCategories = await _context.RaceCategories
                 .AnyAsync(c => c.EventId == id);
@@ -243,19 +399,31 @@ namespace RaceDay.Controllers
             return NoContent();
         }
 
-        // Find the logged-in Organiser's profile.
+        // ==========================================
+        // HELPER METHODS
+        // ==========================================
+
+        /// <summary>
+        /// Find the Organiser profile associated
+        /// with the currently authenticated user.
+        /// </summary>
         private async Task<Organiser?> GetCurrentOrganiserAsync()
         {
             var user = await _userManager.GetUserAsync(User);
 
             if (user?.Email == null)
+            {
                 return null;
+            }
 
             return await _context.Organisers
                 .FirstOrDefaultAsync(o => o.Email == user.Email);
         }
 
-        // Check whether this Organiser owns the event.
+        /// <summary>
+        /// Check whether the logged-in Organiser
+        /// owns the specified event.
+        /// </summary>
         private async Task<bool> OwnsEventAsync(int organiserId)
         {
             var organiser = await GetCurrentOrganiserAsync();
@@ -265,3 +433,4 @@ namespace RaceDay.Controllers
         }
     }
 }
+
