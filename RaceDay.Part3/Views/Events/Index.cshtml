@@ -1,0 +1,40 @@
+﻿@model List<RaceDay.Part3.Models.Events.EventViewModel>
+
+@{
+    ViewData["Title"] = "Race Events";
+}
+
+<div class="container mt-4">
+    <h1>RaceDay Events</h1>
+    <p class="text-muted">
+        Browse upcoming running events.
+    </p>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            Event information will appear here
+            once the API connection is ready.
+        </div>
+    }
+    else
+    {
+        @foreach (var raceEvent in Model)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h4>@raceEvent.EventName</h4>
+                    <p>@raceEvent.Description</p>
+                    <p>
+                        <strong>Location:</strong>
+                        @raceEvent.Location
+                    </p>
+                    <p>
+                        <strong>Date:</strong>
+                        @raceEvent.EventDate.ToShortDateString()
+                    </p>
+                </div>
+            </div>
+        }
+    }
+</div>
