@@ -81,4 +81,12 @@
 
 	</ItemGroup>
 
+
+
+<ItemGroup>
+	<Compile Remove="RaceDay.Part3\**\*.cs" />
+	<Content Remove="RaceDay.Part3\**\*" />
+	<EmbeddedResource Remove="RaceDay.Part3\**\*" />
+	<None Remove="RaceDay.Part3\**\*" />
+</ItemGroup>
 </Project>
