@@ -1,0 +1,117 @@
+﻿@{
+    ViewData["Title"] = "Organiser Dashboard";
+}
+
+<div class="container py-5">
+
+    <!-- DASHBOARD HEADER -->
+    <div class="d-flex flex-column flex-md-row
+        justify-content-between align-items-md-center
+        gap-3 mb-4">
+
+        <div>
+            <h1 class="display-6 fw-bold mb-2">
+                Organiser Dashboard
+            </h1>
+
+            <p class="text-muted mb-0">
+                Welcome to RaceDay.
+                Manage your events from one place.
+            </p>
+        </div>
+
+        <span class="badge bg-primary fs-6 p-3">
+            Organiser
+        </span>
+    </div>
+
+    <!-- DASHBOARD CARDS -->
+    <div class="row g-4 mb-5">
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body p-4">
+
+                    <h2 class="h5 fw-bold">
+                        My Events
+                    </h2>
+
+                    <p class="text-muted">
+                        View and manage the races
+                        you organise.
+                    </p>
+
+                    <a asp-controller="Events"
+                       asp-action="Index"
+                       class="btn btn-primary">
+                        View Events
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body p-4">
+
+                    <h2 class="h5 fw-bold">
+                        Create Event
+                    </h2>
+
+                    <p class="text-muted">
+                        Create a new running event
+                        and manage its details.
+                    </p>
+
+                    <span class="badge bg-secondary">
+                        Coming soon
+                    </span>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body p-4">
+
+                    <h2 class="h5 fw-bold">
+                        Participants
+                    </h2>
+
+                    <p class="text-muted">
+                        Review registrations for
+                        your organised races.
+                    </p>
+
+                    <span class="badge bg-secondary">
+                        Coming soon
+                    </span>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- INFORMATION PANEL -->
+    <div class="card border-0 bg-light">
+        <div class="card-body p-4">
+
+            <h2 class="h5 fw-bold">
+                Getting Started
+            </h2>
+
+            <p class="mb-0">
+                Your organiser workspace is ready.
+                Event creation, editing and participant
+                management will become available
+                when we connect this dashboard
+                to the RaceDay REST API.
+            </p>
+
+        </div>
+    </div>
+
+</div>
