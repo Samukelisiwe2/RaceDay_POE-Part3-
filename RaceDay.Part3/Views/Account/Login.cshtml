@@ -1,0 +1,53 @@
+﻿@model RaceDay.Part3.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container mt-5" style="max-width: 500px;">
+    <h2>Welcome Back to RaceDay</h2>
+    <p class="text-muted">
+        Sign in to manage or enter races.
+    </p>
+
+    <form asp-controller="Account"
+          asp-action="Login"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password"
+                   class="form-control" />
+            <span asp-validation-for="Password"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="RememberMe"
+                   class="form-check-input" />
+            <label asp-for="RememberMe"
+                   class="form-check-label"></label>
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary w-100">
+            Sign In
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
