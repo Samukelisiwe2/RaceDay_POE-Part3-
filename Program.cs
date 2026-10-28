@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using RaceDay.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -284,6 +286,7 @@ app.Run();
 
 // Required for WebApplicationFactory integration tests.
 public partial class Program
+    
 {
 }
 
