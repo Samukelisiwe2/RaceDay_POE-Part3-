@@ -45,6 +45,10 @@ builder.Services.AddHttpClient("RaceDayApi", client =>
 
 builder.Services.AddScoped<RaceDayApiService>();
 
+builder.Services.AddMemoryCache();
+
+builder.Services.AddSingleton<ApiSessionStore>();
+
 // ==========================================
 // 4. COOKIE AUTHENTICATION
 // ==========================================
