@@ -14,20 +14,25 @@ namespace RaceDay.Part3.Controllers
             _api = api;
         }
 
-        // GET: /Account/Login
+        // ======================================
+        // DISPLAY LOGIN PAGE
+        // ======================================
+
         [HttpGet]
         public IActionResult Login()
         {
             return View(new LoginViewModel());
         }
 
-        // POST: /Account/Login
+        // ======================================
+        // PROCESS LOGIN FORM
+        // ======================================
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(
             LoginViewModel model)
         {
-            // Check that the form is valid
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -35,28 +40,26 @@ namespace RaceDay.Part3.Controllers
 
             try
             {
-                // Send login details to the Part 2 API
-                using var response = await _api.LoginAsync(model);
+                // LoginAsync now returns a
+                // LoginApiResponse, not HttpResponseMessage.
+                var result = await _api.LoginAsync(model);
 
-                // Check whether the API accepted login
-                if (!response.IsSuccessStatusCode)
+                if (result == null)
                 {
                     ModelState.AddModelError(
                         "",
-                        "Login was unsuccessful. " +
-                        "Check your email and password, " +
-                        "and make sure your account is confirmed.");
+                        "Invalid login details or account not confirmed.");
 
                     return View(model);
                 }
 
-                // The API accepted the credentials.
-                // We still need to implement secure
-                // authentication sessions in Part 3.
+                // The API has accepted the login.
+                // A secure Part 3 session still needs
+                // to be implemented.
                 ModelState.AddModelError(
                     "",
-                    "Credentials accepted by the API. " +
-                    "Session setup is not complete yet.");
+                    "Credentials verified by the API. " +
+                    "Secure session setup is not complete yet.");
 
                 return View(model);
             }
@@ -64,8 +67,7 @@ namespace RaceDay.Part3.Controllers
             {
                 ModelState.AddModelError(
                     "",
-                    "Unable to connect to the RaceDay API. " +
-                    "Please try again.");
+                    "Unable to connect to the RaceDay API.");
 
                 return View(model);
             }
@@ -73,12 +75,23 @@ namespace RaceDay.Part3.Controllers
             {
                 ModelState.AddModelError(
                     "",
-                    "The API request timed out. " +
-                    "Please try again.");
+                    "The RaceDay API request timed out.");
 
                 return View(model);
             }
         }
+
+        // ======================================
+        // ACCESS DENIED PAGE
+        // ======================================
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return Content(
+                "Access denied. You do not have permission " +
+                "to access this page.");
+        }
     }
 }
-    
+

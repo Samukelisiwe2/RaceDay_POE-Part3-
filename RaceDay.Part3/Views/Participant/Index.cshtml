@@ -1,0 +1,74 @@
+﻿@{
+    ViewData["Title"] = "Participant Dashboard";
+}
+
+<div class="container py-5">
+
+    <div class="mb-4">
+        <h1 class="display-6 fw-bold">
+            Participant Dashboard
+        </h1>
+
+        <p class="text-muted">
+            Welcome to RaceDay! Manage your races
+            and track your progress.
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">Available Races</h2>
+
+                    <p>
+                        Discover upcoming races and
+                        find your next challenge.
+                    </p>
+
+                    <a asp-controller="Events"
+                       asp-action="Index"
+                       class="btn btn-primary">
+                        Browse Races
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">My Registrations</h2>
+
+                    <p>
+                        Your race registrations
+                        will appear here.
+                    </p>
+
+                    <span class="badge bg-secondary">
+                        Coming soon
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h5">My Results</h2>
+
+                    <p>
+                        View your finishing times
+                        and race performance.
+                    </p>
+
+                    <span class="badge bg-secondary">
+                        Coming soon
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
