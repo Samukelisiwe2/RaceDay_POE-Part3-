@@ -42,6 +42,13 @@
                class="btn btn-primary">
                 Edit Event
             </a>
+            <a asp-controller="Organiser"
+               asp-action="Categories"
+               asp-route-id="@Model.EventId"
+               class="btn btn-outline-primary">
+                Manage Categories
+            </a>
+
         }
 
     </div>

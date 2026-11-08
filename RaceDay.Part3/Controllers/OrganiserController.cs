@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -336,7 +337,139 @@ namespace RaceDay.Part3.Controllers
         }
 
         // ======================================
-        // 8. RETRIEVE AUTHENTICATED API COOKIE
+        // 8. VIEW EVENT CATEGORIES
+        // ======================================
+
+        [HttpGet]
+        public async Task<IActionResult> Categories(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+            {
+                return await ExpireSessionAsync();
+            }
+
+            try
+            {
+                var raceEvent =
+                    await _api.GetEventAsync(id, cookie);
+
+                if (raceEvent == null)
+                {
+                    return NotFound();
+                }
+
+                var categories =
+                    await _api.GetCategoriesAsync(
+                        id,
+                        cookie);
+
+                ViewBag.EventId = id;
+                ViewBag.EventName = raceEvent.EventName;
+
+                return View(categories);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to load race categories.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The API request timed out.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ======================================
+        // 9. CREATE RACE CATEGORY
+        // ======================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCategory(
+            CategoryCreateViewModel model)
+        {
+            if (model.EventId <= 0)
+            {
+                return BadRequest();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = string.Join(
+                    " ",
+                    ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
+
+                return RedirectToAction(
+                    nameof(Categories),
+                    new { id = model.EventId });
+            }
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+            {
+                return await ExpireSessionAsync();
+            }
+
+            try
+            {
+                var result =
+                    await _api.CreateCategoryAsync(
+                        model,
+                        cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+                }
+                else
+                {
+                    TempData["Error"] = result.Message;
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to connect to RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The request timed out. " +
+                    "Check existing categories before retrying.";
+            }
+
+            return RedirectToAction(
+                nameof(Categories),
+                new { id = model.EventId });
+        }
+
+        // ======================================
+        // 10. GET AUTHENTICATED API COOKIE
         // ======================================
 
         private string? GetApiCookie()
@@ -348,7 +481,7 @@ namespace RaceDay.Part3.Controllers
         }
 
         // ======================================
-        // 9. EXPIRE SESSION SAFELY
+        // 11. HANDLE EXPIRED SESSION
         // ======================================
 
         private async Task<IActionResult> ExpireSessionAsync()

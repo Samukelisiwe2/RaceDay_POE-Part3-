@@ -620,6 +620,96 @@ namespace RaceDay.Part3.Services
 
             return (false, "Unable to update the event.");
         }
+        // ======================================
+        // GET EVENT CATEGORIES
+        // ======================================
+
+        public async Task<List<RaceCategoryViewModel>>
+            GetCategoriesAsync(
+                int eventId,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/events/{eventId}/categories");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                throw new KeyNotFoundException("Event not found.");
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<List<RaceCategoryViewModel>>()
+                ?? new List<RaceCategoryViewModel>();
+        }
+
+
+        // ======================================
+        // CREATE RACE CATEGORY
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            CreateCategoryAsync(
+                CategoryCreateViewModel model,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"api/events/{model.EventId}/categories");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                model.CategoryName,
+                model.DistanceKm,
+                model.EntryFee,
+                model.MaxParticipants
+            });
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+                return (false, "You do not own this event.");
+
+            if (response.StatusCode == HttpStatusCode.Created)
+                return (true, "Race category created successfully.");
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+                return (false, "A category with this name already exists.");
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+                return (false, "Check the category details and values.");
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return (false, "The event was not found.");
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Category creation was not completed.");
+        }
+
 
     }
 }

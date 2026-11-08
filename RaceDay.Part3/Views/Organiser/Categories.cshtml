@@ -1,0 +1,198 @@
+﻿@model List<RaceDay.Part3.Models.RaceCategoryViewModel>
+
+@{
+    ViewData["Title"] = "Manage Race Categories";
+    int eventId = (int)ViewBag.EventId;
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Events"
+       asp-action="Details"
+       asp-route-id="@eventId"
+       class="text-decoration-none">
+        ← Back to Event
+    </a>
+
+    <h1 class="fw-bold mt-4">Race Categories</h1>
+
+    <p class="text-muted mb-4">
+        Manage categories for @ViewBag.EventName
+    </p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- CREATE CATEGORY FORM -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-body p-4">
+
+            <h2 class="h5 fw-bold mb-3">
+                Create New Category
+            </h2>
+
+            <form asp-controller="Organiser"
+                  asp-action="CreateCategory"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden"
+                       name="EventId"
+                       value="@eventId" />
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label"
+                               for="CategoryName">
+                            Category Name
+                        </label>
+
+                        <input id="CategoryName"
+                               name="CategoryName"
+                               class="form-control"
+                               placeholder="e.g. 5km Fun Run"
+                               maxlength="100"
+                               required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label"
+                               for="DistanceKm">
+                            Distance (km)
+                        </label>
+
+                        <input id="DistanceKm"
+                               name="DistanceKm"
+                               type="number"
+                               step="0.01"
+                               min="0.01"
+                               max="9999.99"
+                               class="form-control"
+                               required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label"
+                               for="EntryFee">
+                            Entry Fee (R)
+                        </label>
+
+                        <input id="EntryFee"
+                               name="EntryFee"
+                               type="number"
+                               min="0"
+                               max="99999999.99"
+                               step="0.01"
+                               class="form-control"
+                               required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label"
+                               for="MaxParticipants">
+                            Maximum Participants
+                        </label>
+
+                        <input id="MaxParticipants"
+                               name="MaxParticipants"
+                               type="number"
+                               min="1"
+                               step="1"
+                               class="form-control"
+                               required />
+                    </div>
+
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary mt-4">
+                    Create Category
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- EXISTING CATEGORIES -->
+    <h2 class="h4 fw-bold mb-3">
+        Existing Categories
+    </h2>
+
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            No categories have been created for this event.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+
+            @foreach (var category in Model)
+            {
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+
+                            <div class="d-flex
+                                justify-content-between
+                                align-items-start gap-2">
+
+                                <h3 class="h5 fw-bold">
+                                    @category.CategoryName
+                                </h3>
+
+                                <span class="badge @(category.IsFull
+                                      ? "bg-danger"
+                                      : "bg-success")">
+                                    @(category.IsFull
+                                        ? "Full"
+                                        : "Available")
+                                </span>
+
+                            </div>
+
+                            <p>
+                                <strong>Distance:</strong>
+                                @category.DistanceKm km
+                            </p>
+
+                            <p>
+                                <strong>Entry Fee:</strong>
+                                R @category.EntryFee.ToString("N2")
+                            </p>
+
+                            <p>
+                                <strong>Participants:</strong>
+                                @category.CurrentParticipants /
+                                @category.MaxParticipants
+                            </p>
+
+                            <p class="mb-0">
+                                <strong>Places Left:</strong>
+                                @category.AvailablePlaces
+                            </p>
+
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
+
