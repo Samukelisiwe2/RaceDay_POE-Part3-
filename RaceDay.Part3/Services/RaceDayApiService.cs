@@ -37,11 +37,8 @@ namespace RaceDay.Part3.Services
                 });
 
             if (!response.IsSuccessStatusCode)
-            {
                 return null;
-            }
 
-            // Retrieve the Identity authentication cookie.
             if (!response.Headers.TryGetValues(
                 "Set-Cookie", out var cookies))
             {
@@ -59,11 +56,9 @@ namespace RaceDay.Part3.Services
                         StringComparison.Ordinal));
 
             if (string.IsNullOrWhiteSpace(authenticationCookie))
-            {
                 return null;
-            }
 
-            // Verify the cookie through the Part 2 API.
+            // Verify the API session.
             using var verifyRequest = new HttpRequestMessage(
                 HttpMethod.Get,
                 "api/auth/me");
@@ -76,9 +71,7 @@ namespace RaceDay.Part3.Services
                 await _client.SendAsync(verifyRequest);
 
             if (!verifyResponse.IsSuccessStatusCode)
-            {
                 return null;
-            }
 
             var verifiedUser = await verifyResponse.Content
                 .ReadFromJsonAsync<LoginApiResponse>();
@@ -102,7 +95,7 @@ namespace RaceDay.Part3.Services
         }
 
         // ======================================
-        // 2. GET EVENTS THROUGH PART 2 API
+        // 2. GET EVENTS
         // ======================================
 
         public async Task<List<EventViewModel>> GetEventsAsync(
@@ -140,8 +133,8 @@ namespace RaceDay.Part3.Services
         // 3. REGISTER THROUGH PART 2 API
         // ======================================
 
-        public async Task<(bool Success, string Message)> RegisterAsync(
-            RegisterViewModel model)
+        public async Task<(bool Success, string Message)>
+            RegisterAsync(RegisterViewModel model)
         {
             using var response = await _client.PostAsJsonAsync(
                 "api/auth/register",
@@ -197,7 +190,7 @@ namespace RaceDay.Part3.Services
             if (string.IsNullOrWhiteSpace(authenticationCookie))
             {
                 throw new UnauthorizedAccessException(
-                    "Your API session has expired. Please log in.");
+                    "Your API session has expired.");
             }
 
             using var request = new HttpRequestMessage(
@@ -232,7 +225,7 @@ namespace RaceDay.Part3.Services
         }
 
         // ======================================
-        // 5. GET PARTICIPANT RACE RESULTS
+        // 5. GET PARTICIPANT RESULTS
         // ======================================
 
         public async Task<List<MyResultViewModel>>
@@ -241,7 +234,7 @@ namespace RaceDay.Part3.Services
             if (string.IsNullOrWhiteSpace(authenticationCookie))
             {
                 throw new UnauthorizedAccessException(
-                    "Your API session has expired. Please log in.");
+                    "Your API session has expired.");
             }
 
             using var request = new HttpRequestMessage(
@@ -274,5 +267,113 @@ namespace RaceDay.Part3.Services
                 .ReadFromJsonAsync<List<MyResultViewModel>>()
                 ?? new List<MyResultViewModel>();
         }
+
+        // ======================================
+        // 6. GET PARTICIPANT PROFILE
+        // ======================================
+
+        public async Task<ParticipantProfileViewModel>
+            GetParticipantProfileAsync(
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "api/profiles/participant");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response =
+                await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not authorised to view this profile.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<ParticipantProfileViewModel>()
+                ?? new ParticipantProfileViewModel();
+        }
+
+        // ======================================
+        // 7. SAVE PARTICIPANT PROFILE
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            SaveParticipantProfileAsync(
+                ParticipantProfileViewModel model,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Put,
+                "api/profiles/participant");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            // Only send the fields accepted by the API.
+            // The API identifies the user from its own cookie.
+            request.Content = JsonContent.Create(new
+            {
+                model.FirstName,
+                model.LastName,
+                model.DateOfBirth,
+                model.Gender,
+                model.PhoneNumber
+            });
+
+            using var response =
+                await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not authorised to update this profile.");
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                return (
+                    true,
+                    "Profile saved successfully."
+                );
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return (
+                    false,
+                    "Please check all required profile fields."
+                );
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (
+                false,
+                "Unable to save your profile."
+            );
+        }
     }
 }
+
