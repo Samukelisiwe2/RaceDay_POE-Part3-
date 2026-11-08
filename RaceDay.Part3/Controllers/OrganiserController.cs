@@ -146,6 +146,63 @@ namespace RaceDay.Part3.Controllers
         }
 
         // ======================================
+        // VIEW ENROLLED PARTICIPANTS
+        // ======================================
+
+        [HttpGet]
+        public async Task<IActionResult> Participants(int id)
+        {
+            if (id <= 0)
+                return NotFound();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                var raceEvent =
+                    await _api.GetEventAsync(id, cookie);
+
+                if (raceEvent == null)
+                    return NotFound();
+
+                var enrolments =
+                    await _api.GetEventEnrolmentsAsync(id, cookie);
+
+                ViewBag.EventId = id;
+                ViewBag.EventName = raceEvent.EventName;
+
+                return View(enrolments);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to load enrolled participants.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The API request timed out.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ======================================
         // 5. SUBMIT NEW EVENT
         // ======================================
 

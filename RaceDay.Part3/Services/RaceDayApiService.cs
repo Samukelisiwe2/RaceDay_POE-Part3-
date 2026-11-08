@@ -787,6 +787,56 @@ namespace RaceDay.Part3.Services
             return (false, "Registration was not completed.");
         }
 
+        // ======================================
+        // GET ENROLLED PARTICIPANTS FOR AN EVENT
+        // ======================================
+
+        public async Task<List<EventEnrolmentViewModel>>
+            GetEventEnrolmentsAsync(
+                int eventId,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/events/{eventId}/enrolments");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                throw new UnauthorizedAccessException(
+                    "Your session has expired.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new System.Security.SecurityException(
+                    "You do not own this event.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new KeyNotFoundException(
+                    "The event was not found.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<List<EventEnrolmentViewModel>>()
+                ?? new List<EventEnrolmentViewModel>();
+        }
+
 
     }
 }

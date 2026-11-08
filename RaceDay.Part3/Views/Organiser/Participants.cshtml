@@ -1,0 +1,122 @@
+﻿@model List<RaceDay.Part3.Models.EventEnrolmentViewModel>
+
+@{
+    ViewData["Title"] = "Enrolled Participants";
+
+    int eventId = (int)ViewBag.EventId;
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Events"
+       asp-action="Details"
+       asp-route-id="@eventId"
+       class="text-decoration-none">
+        ← Back to Event
+    </a>
+
+    <div class="d-flex flex-wrap
+        justify-content-between
+        align-items-center gap-3 mt-4 mb-4">
+
+        <div>
+            <h1 class="fw-bold">
+                Enrolled Participants
+            </h1>
+
+            <p class="text-muted mb-0">
+                @ViewBag.EventName
+            </p>
+        </div>
+
+        <span class="badge bg-primary fs-6 p-3">
+            @Model.Count Registered
+        </span>
+
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-5 text-center">
+                <h2 class="h5">No Participants Yet</h2>
+
+                <p class="text-muted">
+                    No participants have registered
+                    for this race yet.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+
+                <div class="table-responsive">
+                    <table class="table table-hover
+                        align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Participant</th>
+                                <th scope="col">Category</th>
+                                <th scope="col">Race Number</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var participant in Model)
+                            {
+                                var badgeClass =
+                                    participant.EnrollmentStatus
+                                        == "Confirmed"
+                                        ? "bg-success"
+                                        : participant.EnrollmentStatus
+                                            == "Pending"
+                                            ? "bg-warning text-dark"
+                                            : participant.EnrollmentStatus
+                                                == "Cancelled"
+                                                ? "bg-danger"
+                                                : "bg-secondary";
+
+                                <tr>
+                                    <td>
+                                        @participant.FullName
+                                    </td>
+
+                                    <td>
+                                        @participant.CategoryName
+                                    </td>
+
+                                    <td>
+                                        <strong>
+                                            @participant.RaceNumber
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge @badgeClass">
+                                            @participant.EnrollmentStatus
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    }
+
+</div>
