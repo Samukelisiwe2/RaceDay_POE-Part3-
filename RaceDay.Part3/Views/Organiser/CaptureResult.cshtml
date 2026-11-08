@@ -2,6 +2,14 @@
 
 @{
     ViewData["Title"] = "Record Race Result";
+
+    bool raceHasTakenPlace =
+        ViewBag.RaceHasTakenPlace is bool value && value;
+
+    DateTime? eventDate =
+        ViewBag.EventDate is DateTime date
+            ? date
+            : null;
 }
 
 <div class="container py-5">
@@ -13,11 +21,35 @@
         ← Back to Participants
     </a>
 
-    <h1 class="fw-bold mt-4">Record Race Result</h1>
+    <h1 class="fw-bold mt-4">
+        Record Race Result
+    </h1>
 
-    <p class="text-muted mb-4">
-        Enter the participant's result information.
+    <p class="text-muted">
+        @ViewBag.EventName
     </p>
+
+    @if (eventDate.HasValue)
+    {
+        <p>
+            <strong>Race Date:</strong>
+            @eventDate.Value.ToString("dd MMMM yyyy")
+        </p>
+    }
+
+    @if (!raceHasTakenPlace)
+    {
+        <div class="alert alert-warning"
+             role="status">
+            <strong>Race Not Yet Completed</strong>
+
+            <p class="mb-0 mt-2">
+                This event has not taken place yet.
+                Completed results cannot be recorded
+                before race day.
+            </p>
+        </div>
+    }
 
     <div class="card shadow-sm">
         <div class="card-body p-4">
@@ -25,6 +57,7 @@
             @if (ViewBag.ParticipantName != null)
             {
                 <div class="alert alert-info">
+
                     <strong>Participant:</strong>
                     @ViewBag.ParticipantName
 
@@ -46,8 +79,11 @@
 
                 @Html.AntiForgeryToken()
 
-                <input asp-for="EventId" type="hidden" />
-                <input asp-for="EnrollmentId" type="hidden" />
+                <input asp-for="EventId"
+                       type="hidden" />
+
+                <input asp-for="EnrollmentId"
+                       type="hidden" />
 
                 <div asp-validation-summary="All"
                      class="text-danger mb-3"></div>
@@ -58,11 +94,13 @@
 
                     <select asp-for="ResultStatus"
                             class="form-select">
+
                         <option value="Pending">
                             Pending
                         </option>
 
-                        <option value="Completed">
+                        <option value="Completed"
+                                disabled="@(!raceHasTakenPlace)">
                             Completed
                         </option>
 
@@ -73,11 +111,22 @@
                         <option value="Disqualified">
                             Disqualified
                         </option>
+
                     </select>
 
                     <span asp-validation-for="ResultStatus"
                           class="text-danger"></span>
                 </div>
+
+                <h2 class="h5 mt-4">
+                    Race Performance
+                </h2>
+
+                <p class="text-muted small">
+                    For Completed results, start time,
+                    finish time and overall position
+                    are required.
+                </p>
 
                 <div class="row g-3">
 
@@ -88,6 +137,9 @@
                         <input asp-for="StartTime"
                                type="datetime-local"
                                class="form-control" />
+
+                        <span asp-validation-for="StartTime"
+                              class="text-danger"></span>
                     </div>
 
                     <div class="col-md-6">
@@ -97,6 +149,9 @@
                         <input asp-for="FinishTime"
                                type="datetime-local"
                                class="form-control" />
+
+                        <span asp-validation-for="FinishTime"
+                              class="text-danger"></span>
                     </div>
 
                     <div class="col-md-6">
@@ -106,33 +161,35 @@
                         <input asp-for="OverallPosition"
                                type="number"
                                min="1"
-                               class="form-control"
-                               placeholder="e.g. 1" />
+                               class="form-control" />
+
+                        <span asp-validation-for="OverallPosition"
+                              class="text-danger"></span>
                     </div>
 
                 </div>
 
-                <div class="alert alert-light border mt-4">
-                    For a Completed result, enter the start
-                    time, finish time and overall position.
-                    The race must have taken place already.
+                <div class="d-flex flex-wrap gap-2 mt-4">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Save Result
+                    </button>
+
+                    <a asp-controller="Organiser"
+                       asp-action="Participants"
+                       asp-route-id="@Model.EventId"
+                       class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+
                 </div>
 
-                <button type="submit"
-                        class="btn btn-primary">
-                    Save Race Result
-                </button>
-
-                <a asp-controller="Organiser"
-                   asp-action="Participants"
-                   asp-route-id="@Model.EventId"
-                   class="btn btn-outline-secondary ms-2">
-                    Cancel
-                </a>
-
             </form>
+
         </div>
     </div>
+
 </div>
 
 @section Scripts {
