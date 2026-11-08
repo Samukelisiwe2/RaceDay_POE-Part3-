@@ -66,6 +66,114 @@ namespace RaceDay.Part3.Controllers
             return View(new List<MyEnrolmentViewModel>());
         }
 
+        // ======================================
+        // SHOW RACE ENTRY PAGE
+        // ======================================
+
+        [HttpGet]
+        public async Task<IActionResult> EnterRace(int id)
+        {
+            if (id <= 0)
+                return NotFound();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                var raceEvent =
+                    await _api.GetEventAsync(id, cookie);
+
+                if (raceEvent == null)
+                    return NotFound();
+
+                var categories =
+                    await _api.GetCategoriesAsync(id, cookie);
+
+                var page = new RaceEntryPageViewModel
+                {
+                    Event = raceEvent,
+                    Categories = categories
+                };
+
+                return View(page);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to load race entry details.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The API request timed out.";
+            }
+
+            return RedirectToAction("Index", "Events");
+        }
+
+        // ======================================
+        // SUBMIT RACE ENTRY
+        // ======================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EnterRace(
+            int eventId,
+            int categoryId)
+        {
+            if (eventId <= 0 || categoryId <= 0)
+                return BadRequest();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                var result = await _api.EnterRaceAsync(
+                    eventId,
+                    categoryId,
+                    cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+
+                    return RedirectToAction(
+                        nameof(MyRegistrations));
+                }
+
+                TempData["Error"] = result.Message;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to connect to the RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The request timed out. Check My " +
+                    "Registrations before trying again.";
+            }
+
+            return RedirectToAction(
+                nameof(EnterRace),
+                new { id = eventId });
+        }
+
         // MY RESULTS
         [HttpGet]
         public async Task<IActionResult> MyResults()

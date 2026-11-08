@@ -710,6 +710,83 @@ namespace RaceDay.Part3.Services
             return (false, "Category creation was not completed.");
         }
 
+        // ======================================
+        // PARTICIPANT ENTERS A RACE
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            EnterRaceAsync(
+                int eventId,
+                int categoryId,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"api/events/{eventId}/enrolments");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                CategoryId = categoryId
+            });
+
+            using var response =
+                await _client.SendAsync(request);
+
+            if (response.StatusCode ==
+                HttpStatusCode.Unauthorized ||
+                response.StatusCode ==
+                HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            if (response.StatusCode == HttpStatusCode.Created)
+            {
+                return (
+                    true,
+                    "You have successfully entered the race."
+                );
+            }
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                return (
+                    false,
+                    "You may already be registered, " +
+                    "or the category is full."
+                );
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return (
+                    false,
+                    "Registration was rejected. Ensure the " +
+                    "event is open and your Participant " +
+                    "profile is complete."
+                );
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return (false, "The event was not found.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Registration was not completed.");
+        }
+
 
     }
 }

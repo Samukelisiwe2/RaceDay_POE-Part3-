@@ -1,0 +1,124 @@
+﻿@model RaceDay.Part3.Models.RaceEntryPageViewModel
+
+@{
+    ViewData["Title"] = "Enter Race";
+
+    bool registrationOpen =
+        Model.Event.Status == "Open" &&
+        Model.Event.ClosingDate.Date >= DateTime.Today;
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Events"
+       asp-action="Details"
+       asp-route-id="@Model.Event.EventId"
+       class="text-decoration-none">
+        ← Back to Event Details
+    </a>
+
+    <div class="mt-4 mb-4">
+        <h1 class="fw-bold">
+            Enter @Model.Event.EventName
+        </h1>
+
+        <p class="text-muted">
+            Select your race category to register.
+        </p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (!registrationOpen)
+    {
+        <div class="alert alert-warning">
+            Registration is currently closed.
+        </div>
+    }
+
+    @if (Model.Categories.Count == 0)
+    {
+        <div class="alert alert-info">
+            No race categories are available yet.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+
+            @foreach (var category in Model.Categories)
+            {
+                var placesLeft = Math.Max(
+                    0,
+                    category.MaxParticipants -
+                    category.CurrentParticipants);
+
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body p-4">
+
+                            <h2 class="h5 fw-bold">
+                                @category.CategoryName
+                            </h2>
+
+                            <p>
+                                <strong>Distance:</strong>
+                                @category.DistanceKm km
+                            </p>
+
+                            <p>
+                                <strong>Entry Fee:</strong>
+                                R @category.EntryFee.ToString("N2")
+                            </p>
+
+                            <p>
+                                <strong>Places Left:</strong>
+                                @placesLeft
+                            </p>
+
+                            @if (registrationOpen &&
+                                 !category.IsFull)
+                            {
+                                <form asp-controller="Participant"
+                                      asp-action="EnterRace"
+                                      method="post">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="eventId"
+                                           value="@Model.Event.EventId" />
+
+                                    <input type="hidden"
+                                           name="categoryId"
+                                           value="@category.CategoryId" />
+
+                                    <button type="submit"
+                                            class="btn btn-primary">
+                                        Enter Race
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    @(category.IsFull
+                                        ? "Category Full"
+                                        : "Registration Closed")
+                                </span>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    }
+
+</div>

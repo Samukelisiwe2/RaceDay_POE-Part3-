@@ -116,6 +116,17 @@
            class="btn btn-outline-secondary">
             Back to All Events
         </a>
+
+        @if (User.IsInRole("Participant"))
+        {
+            <a asp-controller="Participant"
+               asp-action="EnterRace"
+               asp-route-id="@Model.EventId"
+               class="btn btn-success mt-3">
+                Enter This Race
+            </a>
+        }
+
     </div>
 
 </div>
