@@ -4,11 +4,19 @@
     ViewData["Title"] = "Enrolled Participants";
 
     int eventId = (int)ViewBag.EventId;
+
+    var resultLookup =
+        ViewBag.ResultLookup as Dictionary<int, int>
+        ?? new Dictionary<int, int>();
+
+    int participantCount = Model?.Count ?? 0;
+    int recordedCount = Model?
+        .Count(p => resultLookup.ContainsKey(p.EnrollmentId)) ?? 0;
 }
 
 <div class="container py-5">
 
-    <!-- BACK TO EVENT -->
+    <!-- BACK NAVIGATION -->
     <a asp-controller="Events"
        asp-action="Details"
        asp-route-id="@eventId"
@@ -31,12 +39,11 @@
         </div>
 
         <span class="badge bg-primary fs-6 p-3">
-            @Model.Count Registered
+            @participantCount Registered
         </span>
-
     </div>
 
-    <!-- RESULT MANAGEMENT NAVIGATION -->
+    <!-- MANAGEMENT LINKS -->
     <div class="d-flex flex-wrap gap-2 mb-4">
 
         <a asp-controller="Organiser"
@@ -62,49 +69,65 @@
 
     </div>
 
+    <!-- SUMMARY -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-3">
+
+                    <p class="text-muted mb-1">
+                        Total Enrolments
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @participantCount
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-3">
+
+                    <p class="text-muted mb-1">
+                        Results Recorded
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        @recordedCount
+                    </h2>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <!-- SUCCESS MESSAGE -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success
-            alert-dismissible fade show"
+        <div class="alert alert-success"
              role="status">
-
-            <strong>Success!</strong>
             @TempData["Success"]
-
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert"
-                    aria-label="Close">
-            </button>
-
         </div>
     }
 
     <!-- ERROR MESSAGE -->
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger
-            alert-dismissible fade show"
+        <div class="alert alert-danger"
              role="alert">
-
-            <strong>Error!</strong>
             @TempData["Error"]
-
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert"
-                    aria-label="Close">
-            </button>
-
         </div>
     }
 
-    <!-- NO PARTICIPANTS -->
+    <!-- EMPTY STATE -->
     @if (Model == null || Model.Count == 0)
     {
         <div class="card shadow-sm">
-
             <div class="card-body p-5 text-center">
 
                 <h2 class="h5 fw-bold">
@@ -112,8 +135,7 @@
                 </h2>
 
                 <p class="text-muted">
-                    No participants have registered
-                    for this race yet.
+                    Nobody has registered for this event yet.
                 </p>
 
                 <a asp-controller="Events"
@@ -128,135 +150,144 @@
     }
     else
     {
-        <!-- PARTICIPANTS TABLE -->
+        <!-- PARTICIPANT TABLE -->
         <div class="card shadow-sm">
+            <div class="table-responsive">
 
-            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
 
-                <div class="table-responsive">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-4">
+                                Participant
+                            </th>
 
-                    <table class="table table-hover
-                        align-middle mb-0">
+                            <th scope="col">
+                                Category
+                            </th>
 
-                        <thead class="table-light">
+                            <th scope="col">
+                                Race Number
+                            </th>
+
+                            <th scope="col">
+                                Enrolment Status
+                            </th>
+
+                            <th scope="col">
+                                Result
+                            </th>
+
+                            <th scope="col">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var participant in Model)
+                        {
+                            bool isCancelled =
+                                participant.EnrollmentStatus == "Cancelled";
+
+                            bool hasResult =
+                                resultLookup.TryGetValue(
+                                    participant.EnrollmentId,
+                                    out int existingResultId);
+
+                            string badgeClass =
+                                participant.EnrollmentStatus == "Confirmed"
+                                    ? "bg-success"
+                                    : participant.EnrollmentStatus == "Pending"
+                                        ? "bg-warning text-dark"
+                                        : isCancelled
+                                            ? "bg-danger"
+                                            : "bg-secondary";
 
                             <tr>
-                                <th scope="col" class="ps-4">
-                                    Participant
-                                </th>
 
-                                <th scope="col">
-                                    Category
-                                </th>
+                                <td class="ps-4">
+                                    <strong>
+                                        @participant.FullName
+                                    </strong>
+                                </td>
 
-                                <th scope="col">
-                                    Race Number
-                                </th>
+                                <td>
+                                    @participant.CategoryName
+                                </td>
 
-                                <th scope="col">
-                                    Status
-                                </th>
+                                <td>
+                                    @participant.RaceNumber
+                                </td>
 
-                                <th scope="col">
-                                    Actions
-                                </th>
-                            </tr>
+                                <td>
+                                    <span class="badge @badgeClass">
+                                        @participant.EnrollmentStatus
+                                    </span>
+                                </td>
 
-                        </thead>
-
-                        <tbody>
-
-                            @foreach (var participant in Model)
-                            {
-                                var badgeClass =
-                                    participant.EnrollmentStatus == "Confirmed"
-                                        ? "bg-success"
-                                        : participant.EnrollmentStatus == "Pending"
-                                            ? "bg-warning text-dark"
-                                            : participant.EnrollmentStatus == "Cancelled"
-                                                ? "bg-danger"
-                                                : "bg-secondary";
-
-                                <tr>
-
-                                    <!-- PARTICIPANT NAME -->
-                                    <td class="ps-4">
-
-                                        <strong>
-                                            @participant.FullName
-                                        </strong>
-
-                                    </td>
-
-                                    <!-- CATEGORY -->
-                                    <td>
-                                        @participant.CategoryName
-                                    </td>
-
-                                    <!-- RACE NUMBER -->
-                                    <td>
-                                        @participant.RaceNumber
-                                    </td>
-
-                                    <!-- ENROLMENT STATUS -->
-                                    <td>
-
-                                        <span class="badge @badgeClass">
-                                            @participant.EnrollmentStatus
+                                <td>
+                                    @if (hasResult)
+                                    {
+                                        <span class="badge bg-success">
+                                            Recorded
                                         </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            Not Recorded
+                                        </span>
+                                    }
+                                </td>
 
-                                    </td>
+                                <td>
+                                    @if (isCancelled)
+                                    {
+                                        <span class="text-muted small">
+                                            Entry Cancelled
+                                        </span>
+                                    }
+                                    else if (hasResult)
+                                    {
+                                        <a asp-controller="Organiser"
+                                           asp-action="EditResult"
+                                           asp-route-eventId="@eventId"
+                                           asp-route-resultId="@existingResultId"
+                                           class="btn btn-sm btn-outline-primary">
+                                            Edit Result
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Organiser"
+                                           asp-action="CaptureResult"
+                                           asp-route-eventId="@eventId"
+                                           asp-route-enrollmentId="@participant.EnrollmentId"
+                                           class="btn btn-sm btn-primary">
+                                            Record Result
+                                        </a>
+                                    }
+                                </td>
 
-                                    <!-- RESULT ACTION -->
-                                    <td>
+                            </tr>
+                        }
+                    </tbody>
 
-                                        @if (participant.EnrollmentStatus != "Cancelled")
-                                        {
-                                            <a asp-controller="Organiser"
-                                               asp-action="CaptureResult"
-                                               asp-route-eventId="@eventId"
-                                               asp-route-enrollmentId="@participant.EnrollmentId"
-                                               class="btn btn-sm btn-primary">
-                                                Record Result
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted small">
-                                                Entry Cancelled
-                                            </span>
-                                        }
-
-                                    </td>
-
-                                </tr>
-                            }
-
-                        </tbody>
-
-                    </table>
-
-                </div>
+                </table>
 
             </div>
-
         </div>
 
-        <!-- RESULT INFORMATION -->
-        <div class="alert alert-info mt-4"
-             role="note">
-
+        <div class="alert alert-info mt-4">
             <strong>Result Management</strong>
 
             <p class="mb-0 mt-2">
-                Use Record Result to capture a participant's
-                first race result. If a result already exists,
-                select View / Edit Race Results instead.
-                A Completed result requires a valid start time,
-                finish time and overall position, and the race
-                must have taken place.
+                Participants without results can have their
+                first result recorded. Existing results can
+                be edited. Completed results cannot be saved
+                before the event date.
             </p>
-
         </div>
     }
 

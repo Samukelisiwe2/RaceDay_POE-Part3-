@@ -990,6 +990,66 @@ namespace RaceDay.Part3.Services
             return (true, "Result updated successfully.");
         }
 
+        // ======================================
+        // UPDATE AN EXISTING RACE CATEGORY
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            UpdateCategoryAsync(
+                int categoryId,
+                CategoryCreateViewModel model,
+                string authenticationCookie)
+        {
+            if (categoryId <= 0 || model.EventId <= 0)
+                return (false, "Invalid category or event.");
+
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Put,
+                $"api/categories/{categoryId}");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                model.CategoryName,
+                model.DistanceKm,
+                model.EntryFee,
+                model.MaxParticipants
+            });
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+                throw new System.Security.SecurityException(
+                    "You cannot edit this category.");
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return (false, "Category not found.");
+
+            if (response.IsSuccessStatusCode)
+                return (true, "Race category updated successfully.");
+
+            if (response.StatusCode == HttpStatusCode.BadRequest ||
+                response.StatusCode == HttpStatusCode.Conflict)
+            {
+                return (false,
+                    "The category update was rejected. Check the " +
+                    "values and ensure maximum participants is not " +
+                    "less than the number already enrolled.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Category update was not completed.");
+        }
+
 
 
     }

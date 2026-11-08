@@ -27,9 +27,9 @@ namespace RaceDay.Part3.Controllers
             _sessions = sessions;
         }
 
-        // ======================================
-        // ORGANISER DASHBOARD
-        // ======================================
+        // =====================================
+        // 1. ORGANISER DASHBOARD
+        // =====================================
 
         [HttpGet]
         public IActionResult Index()
@@ -37,9 +37,9 @@ namespace RaceDay.Part3.Controllers
             return View();
         }
 
-        // ======================================
-        // VIEW ORGANISER PROFILE
-        // ======================================
+        // =====================================
+        // 2. VIEW ORGANISER PROFILE
+        // =====================================
 
         [HttpGet]
         public async Task<IActionResult> Profile()
@@ -74,9 +74,9 @@ namespace RaceDay.Part3.Controllers
             return View(new OrganiserProfileViewModel());
         }
 
-        // ======================================
-        // SAVE ORGANISER PROFILE
-        // ======================================
+        // =====================================
+        // 3. SAVE ORGANISER PROFILE
+        // =====================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -123,9 +123,9 @@ namespace RaceDay.Part3.Controllers
             return View(model);
         }
 
-        // ======================================
-        // CREATE EVENT - GET
-        // ======================================
+        // =====================================
+        // 4. CREATE EVENT - GET
+        // =====================================
 
         [HttpGet]
         public IActionResult CreateEvent()
@@ -133,9 +133,9 @@ namespace RaceDay.Part3.Controllers
             return View(new EventCreateViewModel());
         }
 
-        // ======================================
-        // CREATE EVENT - POST
-        // ======================================
+        // =====================================
+        // 5. CREATE EVENT - POST
+        // =====================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -181,9 +181,9 @@ namespace RaceDay.Part3.Controllers
             return View(model);
         }
 
-        // ======================================
-        // EDIT EVENT - GET
-        // ======================================
+        // =====================================
+        // 6. EDIT EVENT - GET
+        // =====================================
 
         [HttpGet]
         public async Task<IActionResult> EditEvent(int id)
@@ -236,9 +236,9 @@ namespace RaceDay.Part3.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ======================================
-        // EDIT EVENT - POST
-        // ======================================
+        // =====================================
+        // 7. EDIT EVENT - POST
+        // =====================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -261,8 +261,9 @@ namespace RaceDay.Part3.Controllers
 
             try
             {
-                var result = await _api.UpdateEventAsync(
-                    id, model, cookie);
+                var result =
+                    await _api.UpdateEventAsync(
+                        id, model, cookie);
 
                 if (result.Success)
                 {
@@ -290,9 +291,9 @@ namespace RaceDay.Part3.Controllers
             return View(model);
         }
 
-        // ======================================
-        // VIEW RACE CATEGORIES
-        // ======================================
+        // =====================================
+        // 8. VIEW RACE CATEGORIES
+        // =====================================
 
         [HttpGet]
         public async Task<IActionResult> Categories(int id)
@@ -343,9 +344,9 @@ namespace RaceDay.Part3.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ======================================
-        // CREATE CATEGORY
-        // ======================================
+        // =====================================
+        // 9. CREATE RACE CATEGORY
+        // =====================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -375,8 +376,9 @@ namespace RaceDay.Part3.Controllers
 
             try
             {
-                var result = await _api.CreateCategoryAsync(
-                    model, cookie);
+                var result =
+                    await _api.CreateCategoryAsync(
+                        model, cookie);
 
                 if (result.Success)
                     TempData["Success"] = result.Message;
@@ -395,8 +397,8 @@ namespace RaceDay.Part3.Controllers
             catch (TaskCanceledException)
             {
                 TempData["Error"] =
-                    "The request timed out. Check the " +
-                    "categories before trying again.";
+                    "The request timed out. Check whether " +
+                    "the category was created before retrying.";
             }
 
             return RedirectToAction(
@@ -404,9 +406,145 @@ namespace RaceDay.Part3.Controllers
                 new { id = model.EventId });
         }
 
-        // ======================================
-        // VIEW ENROLLED PARTICIPANTS
-        // ======================================
+        // =====================================
+        // EDIT CATEGORY - GET
+        // =====================================
+
+        [HttpGet]
+        public async Task<IActionResult> EditCategory(
+            int eventId, int categoryId)
+        {
+            if (eventId <= 0 || categoryId <= 0)
+                return NotFound();
+
+            var cookie = GetApiCookie();
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                // The API enforces ownership of this event.
+                await _api.GetEventEnrolmentsAsync(eventId, cookie);
+
+                var categories =
+                    await _api.GetCategoriesAsync(eventId, cookie);
+
+                var category = categories.FirstOrDefault(
+                    c => c.CategoryId == categoryId);
+
+                if (category == null)
+                    return NotFound();
+
+                ViewBag.CategoryId = categoryId;
+
+                return View(new CategoryCreateViewModel
+                {
+                    EventId = eventId,
+                    CategoryName = category.CategoryName,
+                    DistanceKm = category.DistanceKm,
+                    EntryFee = category.EntryFee,
+                    MaxParticipants = category.MaxParticipants
+                });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] = "Unable to load the category.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] = "The API request timed out.";
+            }
+
+            return RedirectToAction(nameof(Categories),
+                new { id = eventId });
+        }
+
+        // =====================================
+        // EDIT CATEGORY - POST
+        // =====================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCategory(
+            int categoryId, CategoryCreateViewModel model)
+        {
+            if (categoryId <= 0 || model.EventId <= 0)
+                return BadRequest();
+
+            ViewBag.CategoryId = categoryId;
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var cookie = GetApiCookie();
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                await _api.GetEventEnrolmentsAsync(
+                    model.EventId, cookie);
+
+                var categories = await _api.GetCategoriesAsync(
+                    model.EventId, cookie);
+
+                if (!categories.Any(c => c.CategoryId == categoryId))
+                    return NotFound();
+
+                var result = await _api.UpdateCategoryAsync(
+                    categoryId, model, cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+                    return RedirectToAction(nameof(Categories),
+                        new { id = model.EventId });
+                }
+
+                ModelState.AddModelError("", result.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                ModelState.AddModelError("",
+                    "Unable to connect to RaceDay API.");
+            }
+            catch (TaskCanceledException)
+            {
+                ModelState.AddModelError("",
+                    "The request timed out. Check the category before retrying.");
+            }
+
+            return View(model);
+        }
+
+        // =====================================
+        // 10. VIEW PARTICIPANTS
+        // WITH SMART RESULT LOOKUP
+        // =====================================
 
         [HttpGet]
         public async Task<IActionResult> Participants(int id)
@@ -421,17 +559,32 @@ namespace RaceDay.Part3.Controllers
 
             try
             {
+                // Check that the Organiser owns the event.
+                var enrolments =
+                    await _api.GetEventEnrolmentsAsync(
+                        id, cookie);
+
                 var raceEvent =
                     await _api.GetEventAsync(id, cookie);
 
                 if (raceEvent == null)
                     return NotFound();
 
-                var enrolments =
-                    await _api.GetEventEnrolmentsAsync(id, cookie);
+                // Retrieve results already recorded.
+                var results =
+                    await _api.GetEventResultsAsync(
+                        id, cookie);
+
+                // Link enrolments to existing result IDs.
+                var resultLookup = results
+                    .GroupBy(r => r.EnrollmentId)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.First().ResultId);
 
                 ViewBag.EventId = id;
                 ViewBag.EventName = raceEvent.EventName;
+                ViewBag.ResultLookup = resultLookup;
 
                 return View(enrolments);
             }
@@ -450,7 +603,7 @@ namespace RaceDay.Part3.Controllers
             catch (HttpRequestException)
             {
                 TempData["Error"] =
-                    "Unable to load enrolled participants.";
+                    "Unable to load participant information.";
             }
             catch (TaskCanceledException)
             {
@@ -461,9 +614,9 @@ namespace RaceDay.Part3.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ======================================
-        // CAPTURE RESULT - GET
-        // ======================================
+        // =====================================
+        // 11. CAPTURE RESULT - GET
+        // =====================================
 
         [HttpGet]
         public async Task<IActionResult> CaptureResult(
@@ -481,7 +634,8 @@ namespace RaceDay.Part3.Controllers
             try
             {
                 var raceEvent =
-                    await _api.GetEventAsync(eventId, cookie);
+                    await _api.GetEventAsync(
+                        eventId, cookie);
 
                 if (raceEvent == null)
                     return NotFound();
@@ -495,6 +649,25 @@ namespace RaceDay.Part3.Controllers
 
                 if (enrolment == null)
                     return NotFound();
+
+                // Do not allow duplicate result creation.
+                var results =
+                    await _api.GetEventResultsAsync(
+                        eventId, cookie);
+
+                var existingResult = results.FirstOrDefault(
+                    r => r.EnrollmentId == enrollmentId);
+
+                if (existingResult != null)
+                {
+                    return RedirectToAction(
+                        nameof(EditResult),
+                        new
+                        {
+                            eventId,
+                            resultId = existingResult.ResultId
+                        });
+                }
 
                 SetResultFormDetails(
                     raceEvent.EventName,
@@ -538,9 +711,9 @@ namespace RaceDay.Part3.Controllers
                 new { id = eventId });
         }
 
-        // ======================================
-        // CAPTURE RESULT - POST
-        // ======================================
+        // =====================================
+        // 12. CAPTURE RESULT - POST
+        // =====================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -575,6 +748,10 @@ namespace RaceDay.Part3.Controllers
                 if (enrolment == null)
                     return NotFound();
 
+                if (enrolment.EnrollmentStatus == "Cancelled")
+                    return BadRequest(
+                        "Cannot record a result for a cancelled entry.");
+
                 SetResultFormDetails(
                     raceEvent.EventName,
                     raceEvent.EventDate,
@@ -582,8 +759,6 @@ namespace RaceDay.Part3.Controllers
                     enrolment.CategoryName,
                     enrolment.RaceNumber);
 
-                // A race cannot be completed
-                // before its scheduled date.
                 if (model.ResultStatus == "Completed" &&
                     raceEvent.EventDate.Date > DateTime.Today)
                 {
@@ -597,8 +772,31 @@ namespace RaceDay.Part3.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var result = await _api.CreateResultAsync(
-                    model, cookie);
+                // Check for an existing result.
+                var results =
+                    await _api.GetEventResultsAsync(
+                        model.EventId, cookie);
+
+                var existingResult = results.FirstOrDefault(
+                    r => r.EnrollmentId == model.EnrollmentId);
+
+                if (existingResult != null)
+                {
+                    TempData["Error"] =
+                        "A result already exists. Edit it instead.";
+
+                    return RedirectToAction(
+                        nameof(EditResult),
+                        new
+                        {
+                            eventId = model.EventId,
+                            resultId = existingResult.ResultId
+                        });
+                }
+
+                var result =
+                    await _api.CreateResultAsync(
+                        model, cookie);
 
                 if (result.Success)
                 {
@@ -633,14 +831,15 @@ namespace RaceDay.Part3.Controllers
                 ModelState.AddModelError(
                     "",
                     "The request timed out. Check whether " +
-                    "a result was saved before trying again.");
+                    "the result was saved before retrying.");
             }
 
             return View(model);
         }
-        // ======================================
-        // VIEW RESULTS FOR AN EVENT
-        // ======================================
+
+        // =====================================
+        // 13. VIEW RESULTS FOR AN EVENT
+        // =====================================
 
         [HttpGet]
         public async Task<IActionResult> EventResults(int id)
@@ -655,8 +854,9 @@ namespace RaceDay.Part3.Controllers
 
             try
             {
-                // Confirm the Organiser owns this event.
-                await _api.GetEventEnrolmentsAsync(id, cookie);
+                // Ownership validation through the API.
+                await _api.GetEventEnrolmentsAsync(
+                    id, cookie);
 
                 var raceEvent =
                     await _api.GetEventAsync(id, cookie);
@@ -686,24 +886,28 @@ namespace RaceDay.Part3.Controllers
             }
             catch (HttpRequestException)
             {
-                TempData["Error"] = "Unable to load event results.";
+                TempData["Error"] =
+                    "Unable to load event results.";
             }
             catch (TaskCanceledException)
             {
-                TempData["Error"] = "The request timed out.";
+                TempData["Error"] =
+                    "The request timed out.";
             }
 
             return RedirectToAction(
-                nameof(Participants), new { id });
+                nameof(Participants),
+                new { id });
         }
 
-        // ======================================
-        // EDIT RESULT - GET
-        // ======================================
+        // =====================================
+        // 14. EDIT RESULT - GET
+        // =====================================
 
         [HttpGet]
         public async Task<IActionResult> EditResult(
-            int eventId, int resultId)
+            int eventId,
+            int resultId)
         {
             if (eventId <= 0 || resultId <= 0)
                 return NotFound();
@@ -715,16 +919,20 @@ namespace RaceDay.Part3.Controllers
 
             try
             {
-                await _api.GetEventEnrolmentsAsync(eventId, cookie);
+                // Check organiser event ownership.
+                await _api.GetEventEnrolmentsAsync(
+                    eventId, cookie);
 
                 var raceEvent =
-                    await _api.GetEventAsync(eventId, cookie);
+                    await _api.GetEventAsync(
+                        eventId, cookie);
 
                 if (raceEvent == null)
                     return NotFound();
 
                 var results =
-                    await _api.GetEventResultsAsync(eventId, cookie);
+                    await _api.GetEventResultsAsync(
+                        eventId, cookie);
 
                 var result = results.FirstOrDefault(
                     r => r.ResultId == resultId);
@@ -765,32 +973,34 @@ namespace RaceDay.Part3.Controllers
             }
             catch (HttpRequestException)
             {
-                TempData["Error"] = "Unable to load the result.";
+                TempData["Error"] =
+                    "Unable to load the result.";
             }
             catch (TaskCanceledException)
             {
-                TempData["Error"] = "The request timed out.";
+                TempData["Error"] =
+                    "The request timed out.";
             }
 
             return RedirectToAction(
-                nameof(EventResults), new { id = eventId });
+                nameof(EventResults),
+                new { id = eventId });
         }
 
-        // ======================================
-        // EDIT RESULT - POST
-        // ======================================
+        // =====================================
+        // 15. EDIT RESULT - POST
+        // =====================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditResult(
-            int resultId, ResultEntryViewModel model)
+            int resultId,
+            ResultEntryViewModel model)
         {
             if (resultId <= 0 ||
                 model.EventId <= 0 ||
                 model.EnrollmentId <= 0)
-            {
                 return BadRequest();
-            }
 
             var cookie = GetApiCookie();
 
@@ -799,12 +1009,13 @@ namespace RaceDay.Part3.Controllers
 
             try
             {
-                // Validate event ownership and result identity.
+                // Validate event ownership.
                 await _api.GetEventEnrolmentsAsync(
                     model.EventId, cookie);
 
                 var raceEvent =
-                    await _api.GetEventAsync(model.EventId, cookie);
+                    await _api.GetEventAsync(
+                        model.EventId, cookie);
 
                 if (raceEvent == null)
                     return NotFound();
@@ -829,6 +1040,7 @@ namespace RaceDay.Part3.Controllers
                     existing.CategoryName,
                     existing.RaceNumber);
 
+                // Do not complete a future race.
                 if (model.ResultStatus == "Completed" &&
                     raceEvent.EventDate.Date > DateTime.Today)
                 {
@@ -840,8 +1052,9 @@ namespace RaceDay.Part3.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var update = await _api.UpdateResultAsync(
-                    resultId, model, cookie);
+                var update =
+                    await _api.UpdateResultAsync(
+                        resultId, model, cookie);
 
                 if (update.Success)
                 {
@@ -852,7 +1065,8 @@ namespace RaceDay.Part3.Controllers
                         new { id = model.EventId });
                 }
 
-                ModelState.AddModelError("", update.Message);
+                ModelState.AddModelError(
+                    "", update.Message);
             }
             catch (UnauthorizedAccessException)
             {
@@ -880,10 +1094,9 @@ namespace RaceDay.Part3.Controllers
             return View(model);
         }
 
-
-        // ======================================
-        // RESULT FORM INFORMATION
-        // ======================================
+        // =====================================
+        // 16. RESULT FORM VIEW INFORMATION
+        // =====================================
 
         private void SetResultFormDetails(
             string eventName,
@@ -903,9 +1116,9 @@ namespace RaceDay.Part3.Controllers
             ViewBag.RaceNumber = raceNumber;
         }
 
-        // ======================================
-        // AUTHENTICATED API COOKIE
-        // ======================================
+        // =====================================
+        // 17. GET AUTHENTICATED API COOKIE
+        // =====================================
 
         private string? GetApiCookie()
         {
@@ -915,9 +1128,9 @@ namespace RaceDay.Part3.Controllers
             return _sessions.GetApiCookie(sessionId);
         }
 
-        // ======================================
-        // EXPIRE SESSION SAFELY
-        // ======================================
+        // =====================================
+        // 18. EXPIRE SESSION SAFELY
+        // =====================================
 
         private async Task<IActionResult> ExpireSessionAsync()
         {
@@ -936,5 +1149,6 @@ namespace RaceDay.Part3.Controllers
         }
     }
 }
+
 
 
