@@ -109,6 +109,70 @@ namespace RaceDay.Part3.Controllers
 
             return View(model);
         }
+        // ======================================
+        // SHOW CREATE EVENT FORM
+        // ======================================
+
+        [HttpGet]
+        public IActionResult CreateEvent()
+        {
+            return View(new EventCreateViewModel());
+        }
+
+        // ======================================
+        // SUBMIT NEW EVENT
+        // ======================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateEvent(
+            EventCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+            {
+                return await ExpireSessionAsync();
+            }
+
+            try
+            {
+                var result = await _api.CreateEventAsync(
+                    model, cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+
+                    return RedirectToAction(
+                        "Index", "Organiser");
+                }
+
+                ModelState.AddModelError(
+                    "", result.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                ModelState.AddModelError(
+                    "", "Unable to connect to RaceDay API.");
+            }
+            catch (TaskCanceledException)
+            {
+                ModelState.AddModelError(
+                    "", "The API request timed out.");
+            }
+
+            return View(model);
+        }
 
         // RETRIEVE API COOKIE
         private string? GetApiCookie()

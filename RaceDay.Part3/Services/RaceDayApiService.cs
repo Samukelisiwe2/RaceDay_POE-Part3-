@@ -476,6 +476,68 @@ namespace RaceDay.Part3.Services
                 "Unable to save organiser profile."
             );
         }
+        // ======================================
+        // 10. CREATE EVENT THROUGH PART 2 API
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            CreateEventAsync(
+                EventCreateViewModel model,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/events");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                model.EventName,
+                model.Description,
+                EventDate = model.EventDate,
+                ClosingDate = model.ClosingDate,
+                model.Location,
+                model.EventType,
+                model.Status
+            });
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not authorised to create events.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.Created)
+            {
+                return (true, "Race event created successfully.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return (
+                    false,
+                    "The API rejected the event. Check the dates, " +
+                    "required fields and your Organiser profile."
+                );
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Event creation was not completed.");
+        }
+
     }
 }
 

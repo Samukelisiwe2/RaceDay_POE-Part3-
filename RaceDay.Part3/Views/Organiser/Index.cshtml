@@ -4,6 +4,40 @@
 
 <div class="container py-5">
 
+    <!-- SUCCESS MESSAGE -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+
+            <strong>Success!</strong>
+            @TempData["Success"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    <!-- ERROR MESSAGE -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            <strong>Error!</strong>
+            @TempData["Error"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
     <!-- DASHBOARD HEADER -->
     <div class="d-flex flex-column flex-md-row
         justify-content-between align-items-md-center
@@ -14,16 +48,16 @@
                 Organiser Dashboard
             </h1>
 
+            <p class="text-muted mb-3">
+                Welcome to RaceDay.
+                Manage your events from one place.
+            </p>
+
             <a asp-controller="Organiser"
                asp-action="Profile"
                class="btn btn-outline-primary">
                 View / Edit Organiser Profile
             </a>
-
-            <p class="text-muted mb-0">
-                Welcome to RaceDay.
-                Manage your events from one place.
-            </p>
         </div>
 
         <span class="badge bg-primary fs-6 p-3">
@@ -34,6 +68,7 @@
     <!-- DASHBOARD CARDS -->
     <div class="row g-4 mb-5">
 
+        <!-- MY EVENTS -->
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body p-4">
@@ -57,6 +92,7 @@
             </div>
         </div>
 
+        <!-- CREATE EVENT -->
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body p-4">
@@ -70,14 +106,17 @@
                         and manage its details.
                     </p>
 
-                    <span class="badge bg-secondary">
-                        Coming soon
-                    </span>
+                    <a asp-controller="Organiser"
+                       asp-action="CreateEvent"
+                       class="btn btn-primary">
+                        Create Event
+                    </a>
 
                 </div>
             </div>
         </div>
 
+        <!-- PARTICIPANTS -->
         <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body p-4">
@@ -92,7 +131,7 @@
                     </p>
 
                     <span class="badge bg-secondary">
-                        Coming soon
+                        Coming Soon
                     </span>
 
                 </div>
@@ -106,15 +145,14 @@
         <div class="card-body p-4">
 
             <h2 class="h5 fw-bold">
-                Getting Started
+                Organiser Workspace
             </h2>
 
             <p class="mb-0">
-                Your organiser workspace is ready.
-                Event creation, editing and participant
-                management will become available
-                when we connect this dashboard
-                to the RaceDay REST API.
+                Create race events, browse existing events
+                and update your organiser profile.
+                Participant management and additional
+                event-management features are being developed.
             </p>
 
         </div>
