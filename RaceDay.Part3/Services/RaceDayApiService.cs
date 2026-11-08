@@ -1,7 +1,11 @@
 ﻿
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading.Tasks;
 using RaceDay.Part3.Models;
 using RaceDay.Part3.Models.Events;
 
@@ -37,7 +41,7 @@ namespace RaceDay.Part3.Services
                 return null;
             }
 
-            // Retrieve the API authentication cookie.
+            // Retrieve the Identity authentication cookie.
             if (!response.Headers.TryGetValues(
                 "Set-Cookie", out var cookies))
             {
@@ -59,7 +63,7 @@ namespace RaceDay.Part3.Services
                 return null;
             }
 
-            // Verify the cookie against the Part 2 API.
+            // Verify the cookie through the Part 2 API.
             using var verifyRequest = new HttpRequestMessage(
                 HttpMethod.Get,
                 "api/auth/me");
@@ -115,12 +119,14 @@ namespace RaceDay.Part3.Services
                     authenticationCookie);
             }
 
-            using var response = await _client.SendAsync(request);
+            using var response =
+                await _client.SendAsync(request);
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
             {
                 throw new UnauthorizedAccessException(
-                    "Please sign in to view events.");
+                    "You are not authorised to view events.");
             }
 
             response.EnsureSuccessStatusCode();
@@ -179,6 +185,94 @@ namespace RaceDay.Part3.Services
                 "Registration could not be completed. " +
                 "Please try again."
             );
+        }
+
+        // ======================================
+        // 4. GET PARTICIPANT REGISTRATIONS
+        // ======================================
+
+        public async Task<List<MyEnrolmentViewModel>>
+            GetMyEnrolmentsAsync(string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session has expired. Please log in.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "api/enrolments/my");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response =
+                await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session is no longer authorised.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new KeyNotFoundException(
+                    "Complete your Participant profile first.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<List<MyEnrolmentViewModel>>()
+                ?? new List<MyEnrolmentViewModel>();
+        }
+
+        // ======================================
+        // 5. GET PARTICIPANT RACE RESULTS
+        // ======================================
+
+        public async Task<List<MyResultViewModel>>
+            GetMyResultsAsync(string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session has expired. Please log in.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "api/results/my");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response =
+                await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session is no longer authorised.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new KeyNotFoundException(
+                    "Complete your Participant profile first.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<List<MyResultViewModel>>()
+                ?? new List<MyResultViewModel>();
         }
     }
 }

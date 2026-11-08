@@ -1,0 +1,62 @@
+﻿@model List<RaceDay.Part3.Models.MyResultViewModel>
+
+@{
+    ViewData["Title"] = "My Results";
+}
+
+<div class="container py-4">
+    <h1 class="fw-bold">My Race Results</h1>
+
+    <p class="text-muted">
+        View your race performance and results.
+    </p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-warning">
+            @ViewBag.Error
+        </div>
+    }
+    else if (Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            No race results have been recorded yet.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var result in Model)
+            {
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h2 class="h5">@result.EventName</h2>
+
+                            <p>Category: @result.CategoryName</p>
+                            <p>Race Number: @result.RaceNumber</p>
+                            <p>Status: @result.ResultStatus</p>
+                            <p>
+                                Position:
+                                @(result.OverallPosition?.ToString()
+                                    ?? "Not recorded")
+                            </p>
+
+                            <p>
+                                Duration:
+                                @(result.Duration?.ToString(
+                                    @"hh\:mm\:ss") ?? "Not recorded")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <a asp-controller="Participant"
+       asp-action="Index"
+       class="btn btn-outline-secondary mt-4">
+        Back to Dashboard
+    </a>
+</div>
