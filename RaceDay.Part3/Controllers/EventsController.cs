@@ -70,6 +70,61 @@ namespace RaceDay.Part3.Controllers
 
             return View(new List<EventViewModel>());
         }
+        // ======================================
+        // DISPLAY SINGLE RACE EVENT
+        // ======================================
+
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            var sessionId =
+                User.FindFirst("ApiSessionId")?.Value;
+
+            var apiCookie =
+                _sessions.GetApiCookie(sessionId);
+
+            if (string.IsNullOrWhiteSpace(apiCookie))
+            {
+                return RedirectToAction(
+                    "Login", "Account");
+            }
+
+            try
+            {
+                var raceEvent =
+                    await _api.GetEventAsync(id, apiCookie);
+
+                if (raceEvent == null)
+                {
+                    return NotFound();
+                }
+
+                return View(raceEvent);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return RedirectToAction(
+                    "Login", "Account");
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to retrieve event details.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The API request timed out.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
     }
 }
 

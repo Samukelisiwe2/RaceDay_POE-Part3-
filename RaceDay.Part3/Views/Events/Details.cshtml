@@ -1,0 +1,115 @@
+﻿@model RaceDay.Part3.Models.Events.EventViewModel
+
+@{
+    ViewData["Title"] = "Event Details";
+
+    var statusClass = Model.Status == "Open"
+        ? "bg-success"
+        : Model.Status == "Planned"
+            ? "bg-primary"
+            : Model.Status == "Cancelled"
+                ? "bg-danger"
+                : "bg-secondary";
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Events"
+       asp-action="Index"
+       class="text-decoration-none">
+        ← Back to Events
+    </a>
+
+    <div class="d-flex flex-wrap
+        justify-content-between
+        align-items-start gap-3 mt-4 mb-4">
+
+        <div>
+            <h1 class="fw-bold">
+                @Model.EventName
+            </h1>
+
+            <span class="badge @statusClass">
+                @Model.Status
+            </span>
+        </div>
+
+        @if (User.IsInRole("Organiser"))
+        {
+            <a asp-controller="Organiser"
+               asp-action="EditEvent"
+               asp-route-id="@Model.EventId"
+               class="btn btn-primary">
+                Edit Event
+            </a>
+        }
+
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <h2 class="h5 fw-bold">
+                        About This Event
+                    </h2>
+
+                    <p class="mb-0">
+                        @Model.Description
+                    </p>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+
+                    <h2 class="h5 fw-bold mb-4">
+                        Event Information
+                    </h2>
+
+                    <p>
+                        <strong>Event Date:</strong>
+                        @Model.EventDate.ToString("dd MMM yyyy")
+                    </p>
+
+                    <p>
+                        <strong>Location:</strong>
+                        @Model.Location
+                    </p>
+
+                    <p>
+                        <strong>Event Type:</strong>
+                        @Model.EventType
+                    </p>
+
+                    <p>
+                        <strong>Registration Closes:</strong>
+                        @Model.ClosingDate.ToString("dd MMM yyyy")
+                    </p>
+
+                    <p class="mb-0">
+                        <strong>Status:</strong>
+                        @Model.Status
+                    </p>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-4">
+        <a asp-controller="Events"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            Back to All Events
+        </a>
+    </div>
+
+</div>
+
