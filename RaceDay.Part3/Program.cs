@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using RaceDay.Part3.Services;
 
@@ -16,7 +17,8 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddHttpClient("RaceDayApi", client =>
 {
-    var apiUrl = builder.Configuration["ApiSettings:BaseUrl"];
+    var apiUrl =
+        builder.Configuration["ApiSettings:BaseUrl"];
 
     if (string.IsNullOrWhiteSpace(apiUrl))
     {
@@ -31,20 +33,20 @@ builder.Services.AddHttpClient("RaceDayApi", client =>
     new HttpClientHandler
     {
         // Prevent shared HttpClient handlers from
-        // storing other users' authentication cookies.
+        // storing authentication cookies.
         UseCookies = false,
 
-        // Let our service handle authentication
-        // responses without automatic redirects.
+        // Handle authentication redirects explicitly.
         AllowAutoRedirect = false
     });
 
 // ==========================================
-// 3. REGISTER CUSTOM API SERVICE
+// 3. REGISTER CUSTOM SERVICES
 // ==========================================
 
 builder.Services.AddScoped<RaceDayApiService>();
 
+// Server-side temporary API session storage.
 builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<ApiSessionStore>();
@@ -59,18 +61,56 @@ builder.Services
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
-        options.AccessDeniedPath = "/Account/AccessDenied";
+
+        options.AccessDeniedPath =
+            "/Account/AccessDenied";
 
         options.Cookie.Name = "RaceDay.Part3.Auth";
+
         options.Cookie.HttpOnly = true;
+
         options.Cookie.SecurePolicy =
             CookieSecurePolicy.Always;
+
         options.Cookie.SameSite = SameSiteMode.Lax;
 
         options.ExpireTimeSpan =
             TimeSpan.FromHours(2);
 
-        options.SlidingExpiration = true;
+        // Do not keep extending a frontend session
+        // beyond the API session's fixed lifetime.
+        options.SlidingExpiration = false;
+
+        // ======================================
+        // VALIDATE SERVER-SIDE SESSION
+        // ======================================
+
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = async context =>
+            {
+                var sessionId = context.Principal?
+                    .FindFirst("ApiSessionId")?.Value;
+
+                var sessionStore = context.HttpContext
+                    .RequestServices
+                    .GetRequiredService<ApiSessionStore>();
+
+                var apiCookie =
+                    sessionStore.GetApiCookie(sessionId);
+
+                // Reject frontend authentication if
+                // its server-side API session is missing.
+                if (string.IsNullOrWhiteSpace(apiCookie))
+                {
+                    context.RejectPrincipal();
+
+                    await context.HttpContext.SignOutAsync(
+                        CookieAuthenticationDefaults
+                            .AuthenticationScheme);
+                }
+            }
+        };
     });
 
 // ==========================================
@@ -92,6 +132,7 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
+
     app.UseHsts();
 }
 
@@ -100,12 +141,14 @@ if (!app.Environment.IsDevelopment())
 // ==========================================
 
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 app.UseRouting();
 
 // Authentication must run before authorisation.
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 // ==========================================
@@ -117,8 +160,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // ==========================================
-// 10. START APPLICATION
+// 10. START RACEDAY PART 3
 // ==========================================
 
 app.Run();
-

@@ -1,0 +1,24 @@
+﻿@{
+    ViewData["Title"] = "Registration Submitted";
+}
+
+<div class="container py-5 text-center"
+     style="max-width: 600px;">
+
+    <h1 class="fw-bold">Registration Submitted!</h1>
+
+    <div class="alert alert-success mt-4">
+        @TempData["RegistrationSuccess"]
+    </div>
+
+    <p class="text-muted">
+        Please check your email for confirmation.
+        Your selected role also requires administrator approval.
+    </p>
+
+    <a asp-controller="Account"
+       asp-action="Login"
+       class="btn btn-primary mt-3">
+        Go to Login
+    </a>
+</div>
