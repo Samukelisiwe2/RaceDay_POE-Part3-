@@ -17,12 +17,11 @@
     </a>
 
     <!-- PAGE HEADER -->
-    <div class="d-flex flex-wrap
-        justify-content-between
+    <div class="d-flex flex-wrap justify-content-between
         align-items-center gap-3 mt-4 mb-4">
 
         <div>
-            <h1 class="fw-bold">
+            <h1 class="fw-bold mb-2">
                 Enrolled Participants
             </h1>
 
@@ -34,12 +33,40 @@
         <span class="badge bg-primary fs-6 p-3">
             @Model.Count Registered
         </span>
+
+    </div>
+
+    <!-- RESULT MANAGEMENT NAVIGATION -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+
+        <a asp-controller="Organiser"
+           asp-action="EventResults"
+           asp-route-id="@eventId"
+           class="btn btn-primary">
+            View / Edit Race Results
+        </a>
+
+        <a asp-controller="Organiser"
+           asp-action="Categories"
+           asp-route-id="@eventId"
+           class="btn btn-outline-primary">
+            Manage Categories
+        </a>
+
+        <a asp-controller="Events"
+           asp-action="Details"
+           asp-route-id="@eventId"
+           class="btn btn-outline-secondary">
+            Event Details
+        </a>
+
     </div>
 
     <!-- SUCCESS MESSAGE -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show"
+        <div class="alert alert-success
+            alert-dismissible fade show"
              role="status">
 
             <strong>Success!</strong>
@@ -50,13 +77,15 @@
                     data-bs-dismiss="alert"
                     aria-label="Close">
             </button>
+
         </div>
     }
 
     <!-- ERROR MESSAGE -->
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show"
+        <div class="alert alert-danger
+            alert-dismissible fade show"
              role="alert">
 
             <strong>Error!</strong>
@@ -67,13 +96,15 @@
                     data-bs-dismiss="alert"
                     aria-label="Close">
             </button>
+
         </div>
     }
 
     <!-- NO PARTICIPANTS -->
-    @if (Model.Count == 0)
+    @if (Model == null || Model.Count == 0)
     {
         <div class="card shadow-sm">
+
             <div class="card-body p-5 text-center">
 
                 <h2 class="h5 fw-bold">
@@ -97,15 +128,18 @@
     }
     else
     {
-        <!-- PARTICIPANT TABLE -->
+        <!-- PARTICIPANTS TABLE -->
         <div class="card shadow-sm">
+
             <div class="card-body p-0">
 
                 <div class="table-responsive">
+
                     <table class="table table-hover
                         align-middle mb-0">
 
                         <thead class="table-light">
+
                             <tr>
                                 <th scope="col" class="ps-4">
                                     Participant
@@ -127,9 +161,11 @@
                                     Actions
                                 </th>
                             </tr>
+
                         </thead>
 
                         <tbody>
+
                             @foreach (var participant in Model)
                             {
                                 var badgeClass =
@@ -142,11 +178,14 @@
                                                 : "bg-secondary";
 
                                 <tr>
+
                                     <!-- PARTICIPANT NAME -->
                                     <td class="ps-4">
+
                                         <strong>
                                             @participant.FullName
                                         </strong>
+
                                     </td>
 
                                     <!-- CATEGORY -->
@@ -161,13 +200,16 @@
 
                                     <!-- ENROLMENT STATUS -->
                                     <td>
+
                                         <span class="badge @badgeClass">
                                             @participant.EnrollmentStatus
                                         </span>
+
                                     </td>
 
-                                    <!-- ACTIONS -->
+                                    <!-- RESULT ACTION -->
                                     <td>
+
                                         @if (participant.EnrollmentStatus != "Cancelled")
                                         {
                                             <a asp-controller="Organiser"
@@ -184,23 +226,37 @@
                                                 Entry Cancelled
                                             </span>
                                         }
+
                                     </td>
+
                                 </tr>
                             }
+
                         </tbody>
 
                     </table>
+
                 </div>
 
             </div>
+
         </div>
 
-        <!-- INFORMATION MESSAGE -->
-        <div class="alert alert-info mt-4" role="note">
-            <strong>Result Management:</strong>
-            Select Record Result to capture a participant's
-            race performance. Completed results require
-            a valid start time, finish time and overall position.
+        <!-- RESULT INFORMATION -->
+        <div class="alert alert-info mt-4"
+             role="note">
+
+            <strong>Result Management</strong>
+
+            <p class="mb-0 mt-2">
+                Use Record Result to capture a participant's
+                first race result. If a result already exists,
+                select View / Edit Race Results instead.
+                A Completed result requires a valid start time,
+                finish time and overall position, and the race
+                must have taken place.
+            </p>
+
         </div>
     }
 

@@ -907,6 +907,89 @@ namespace RaceDay.Part3.Services
             public string? Message { get; set; }
         }
 
+        // ======================================
+        // GET RESULTS FOR AN EVENT
+        // ======================================
+
+        public async Task<List<EventResultViewModel>>
+            GetEventResultsAsync(
+                int eventId,
+                string authenticationCookie)
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/events/{eventId}/results");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+                throw new System.Security.SecurityException();
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                throw new KeyNotFoundException("Event not found.");
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<List<EventResultViewModel>>()
+                ?? new List<EventResultViewModel>();
+        }
+
+        // ======================================
+        // UPDATE AN EXISTING RESULT
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            UpdateResultAsync(
+                int resultId,
+                ResultEntryViewModel model,
+                string authenticationCookie)
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Put,
+                $"api/results/{resultId}");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                model.ResultStatus,
+                model.StartTime,
+                model.FinishTime,
+                model.OverallPosition
+            });
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+                throw new System.Security.SecurityException();
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return (false, "Result not found.");
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var message = await response.Content.ReadAsStringAsync();
+
+                return (false,
+                    "Result update was rejected: " + message);
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (true, "Result updated successfully.");
+        }
+
 
 
     }

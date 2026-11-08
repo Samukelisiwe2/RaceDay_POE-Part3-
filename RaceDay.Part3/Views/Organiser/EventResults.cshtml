@@ -1,0 +1,107 @@
+﻿@model List<RaceDay.Part3.Models.EventResultViewModel>
+
+@{
+    ViewData["Title"] = "Event Results";
+    int eventId = (int)ViewBag.EventId;
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Organiser"
+       asp-action="Participants"
+       asp-route-id="@eventId"
+       class="text-decoration-none">
+        ← Back to Participants
+    </a>
+
+    <h1 class="fw-bold mt-4">Event Results</h1>
+
+    <p class="text-muted mb-4">
+        @ViewBag.EventName
+    </p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            No race results have been recorded yet.
+
+            <a asp-controller="Organiser"
+               asp-action="Participants"
+               asp-route-id="@eventId">
+                View Participants
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Participant</th>
+                            <th>Category</th>
+                            <th>Race Number</th>
+                            <th>Status</th>
+                            <th>Position</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var result in Model)
+                        {
+                            <tr>
+                                <td class="ps-3">
+                                    @result.FullName
+                                </td>
+
+                                <td>@result.CategoryName</td>
+                                <td>@result.RaceNumber</td>
+
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @result.ResultStatus
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @(result.OverallPosition?.ToString() ?? "—")
+                                </td>
+
+                                <td>
+                                    <a asp-controller="Organiser"
+                                       asp-action="EditResult"
+                                       asp-route-eventId="@eventId"
+                                       asp-route-resultId="@result.ResultId"
+                                       class="btn btn-sm btn-primary">
+                                        Edit Result
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+
+            </div>
+        </div>
+    }
+
+</div>
