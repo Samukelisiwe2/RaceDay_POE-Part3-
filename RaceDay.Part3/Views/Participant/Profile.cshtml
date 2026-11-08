@@ -1,0 +1,149 @@
+﻿@model RaceDay.Part3.Models.ParticipantProfileViewModel
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Participant"
+       asp-action="Index"
+       class="text-decoration-none">
+        ← Back to Dashboard
+    </a>
+
+    <div class="mt-4 mb-4">
+        <h1 class="fw-bold">My Participant Profile</h1>
+        <p class="text-muted">
+            Complete your details before entering races.
+        </p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+            <form asp-controller="Participant"
+                  asp-action="Profile"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Email"
+                           class="form-label"></label>
+
+                    <input asp-for="Email"
+                           class="form-control"
+                           readonly />
+                </div>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="FirstName"
+                               class="form-label"></label>
+
+                        <input asp-for="FirstName"
+                               class="form-control" />
+
+                        <span asp-validation-for="FirstName"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="LastName"
+                               class="form-label"></label>
+
+                        <input asp-for="LastName"
+                               class="form-control" />
+
+                        <span asp-validation-for="LastName"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="DateOfBirth"
+                               class="form-label"></label>
+
+                        <input asp-for="DateOfBirth"
+                               type="date"
+                               class="form-control"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                        <span asp-validation-for="DateOfBirth"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Gender"
+                               class="form-label"></label>
+
+                        <select asp-for="Gender"
+                                class="form-select">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                            <option value="Prefer not to say">
+                                Prefer not to say
+                            </option>
+                        </select>
+
+                        <span asp-validation-for="Gender"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="PhoneNumber"
+                               class="form-label"></label>
+
+                        <input asp-for="PhoneNumber"
+                               type="tel"
+                               class="form-control"
+                               placeholder="0712345678" />
+
+                        <span asp-validation-for="PhoneNumber"
+                              class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Save Profile
+                    </button>
+
+                    <a asp-controller="Participant"
+                       asp-action="Index"
+                       class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

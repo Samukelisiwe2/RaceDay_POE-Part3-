@@ -1,4 +1,8 @@
 ﻿
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -22,21 +26,29 @@ namespace RaceDay.Part3.Controllers
             _sessions = sessions;
         }
 
-        // PARTICIPANT DASHBOARD
+        // ======================================
+        // 1. PARTICIPANT DASHBOARD
+        // ======================================
+
         [HttpGet]
         public IActionResult Index()
         {
             return View();
         }
 
-        // MY REGISTRATIONS
+        // ======================================
+        // 2. MY REGISTRATIONS
+        // ======================================
+
         [HttpGet]
         public async Task<IActionResult> MyRegistrations()
         {
             var cookie = GetApiCookie();
 
             if (string.IsNullOrWhiteSpace(cookie))
+            {
                 return await ExpireSessionAsync();
+            }
 
             try
             {
@@ -56,30 +68,35 @@ namespace RaceDay.Part3.Controllers
             catch (HttpRequestException)
             {
                 ViewBag.Error =
-                    "Could not load your registrations.";
+                    "Unable to retrieve your registrations.";
             }
             catch (TaskCanceledException)
             {
-                ViewBag.Error = "The request timed out.";
+                ViewBag.Error =
+                    "The registration request timed out.";
             }
 
             return View(new List<MyEnrolmentViewModel>());
         }
 
         // ======================================
-        // SHOW RACE ENTRY PAGE
+        // 3. SHOW RACE ENTRY PAGE
         // ======================================
 
         [HttpGet]
         public async Task<IActionResult> EnterRace(int id)
         {
             if (id <= 0)
+            {
                 return NotFound();
+            }
 
             var cookie = GetApiCookie();
 
             if (string.IsNullOrWhiteSpace(cookie))
+            {
                 return await ExpireSessionAsync();
+            }
 
             try
             {
@@ -87,7 +104,9 @@ namespace RaceDay.Part3.Controllers
                     await _api.GetEventAsync(id, cookie);
 
                 if (raceEvent == null)
+                {
                     return NotFound();
+                }
 
                 var categories =
                     await _api.GetCategoriesAsync(id, cookie);
@@ -104,6 +123,10 @@ namespace RaceDay.Part3.Controllers
             {
                 return await ExpireSessionAsync();
             }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
             catch (HttpRequestException)
             {
                 TempData["Error"] =
@@ -119,7 +142,7 @@ namespace RaceDay.Part3.Controllers
         }
 
         // ======================================
-        // SUBMIT RACE ENTRY
+        // 4. SUBMIT RACE ENTRY
         // ======================================
 
         [HttpPost]
@@ -129,12 +152,17 @@ namespace RaceDay.Part3.Controllers
             int categoryId)
         {
             if (eventId <= 0 || categoryId <= 0)
-                return BadRequest();
+            {
+                return BadRequest(
+                    "Invalid event or category.");
+            }
 
             var cookie = GetApiCookie();
 
             if (string.IsNullOrWhiteSpace(cookie))
+            {
                 return await ExpireSessionAsync();
+            }
 
             try
             {
@@ -160,7 +188,7 @@ namespace RaceDay.Part3.Controllers
             catch (HttpRequestException)
             {
                 TempData["Error"] =
-                    "Unable to connect to the RaceDay API.";
+                    "Unable to connect to RaceDay API.";
             }
             catch (TaskCanceledException)
             {
@@ -174,18 +202,24 @@ namespace RaceDay.Part3.Controllers
                 new { id = eventId });
         }
 
-        // MY RESULTS
+        // ======================================
+        // 5. MY RACE RESULTS
+        // ======================================
+
         [HttpGet]
         public async Task<IActionResult> MyResults()
         {
             var cookie = GetApiCookie();
 
             if (string.IsNullOrWhiteSpace(cookie))
+            {
                 return await ExpireSessionAsync();
+            }
 
             try
             {
-                var results = await _api.GetMyResultsAsync(cookie);
+                var results =
+                    await _api.GetMyResultsAsync(cookie);
 
                 return View(results);
             }
@@ -200,17 +234,136 @@ namespace RaceDay.Part3.Controllers
             catch (HttpRequestException)
             {
                 ViewBag.Error =
-                    "Could not load race results.";
+                    "Unable to retrieve race results.";
             }
             catch (TaskCanceledException)
             {
-                ViewBag.Error = "The request timed out.";
+                ViewBag.Error =
+                    "The results request timed out.";
             }
 
             return View(new List<MyResultViewModel>());
         }
 
-        // GET AUTHENTICATED API COOKIE
+        // ======================================
+        // 6. VIEW PARTICIPANT PROFILE
+        // ======================================
+
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+            {
+                return await ExpireSessionAsync();
+            }
+
+            try
+            {
+                var profile =
+                    await _api.GetParticipantProfileAsync(cookie);
+
+                return View(profile);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to load your Participant profile.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The API request timed out.";
+            }
+
+            return View(new ParticipantProfileViewModel
+            {
+                Email = User.Identity?.Name ?? ""
+            });
+        }
+
+        // ======================================
+        // 7. SAVE PARTICIPANT PROFILE
+        // ======================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(
+            ParticipantProfileViewModel model)
+        {
+            // Email is controlled by the API and is not
+            // editable through this form.
+            ModelState.Remove(nameof(model.Email));
+
+            if (model.DateOfBirth.HasValue &&
+                model.DateOfBirth.Value.Date > DateTime.Today)
+            {
+                ModelState.AddModelError(
+                    nameof(model.DateOfBirth),
+                    "Date of birth cannot be in the future.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.Email = User.Identity?.Name ?? "";
+                return View(model);
+            }
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+            {
+                return await ExpireSessionAsync();
+            }
+
+            try
+            {
+                var result =
+                    await _api.SaveParticipantProfileAsync(
+                        model,
+                        cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+
+                    return RedirectToAction(nameof(Profile));
+                }
+
+                ModelState.AddModelError(
+                    "",
+                    result.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Unable to connect to RaceDay API.");
+            }
+            catch (TaskCanceledException)
+            {
+                ModelState.AddModelError(
+                    "",
+                    "The API request timed out.");
+            }
+
+            model.Email = User.Identity?.Name ?? "";
+            return View(model);
+        }
+
+        // ======================================
+        // 8. GET AUTHENTICATED API COOKIE
+        // ======================================
+
         private string? GetApiCookie()
         {
             var sessionId =
@@ -219,7 +372,10 @@ namespace RaceDay.Part3.Controllers
             return _sessions.GetApiCookie(sessionId);
         }
 
-        // HANDLE EXPIRED SESSIONS
+        // ======================================
+        // 9. HANDLE EXPIRED API SESSION
+        // ======================================
+
         private async Task<IActionResult> ExpireSessionAsync()
         {
             var sessionId =
@@ -230,7 +386,9 @@ namespace RaceDay.Part3.Controllers
             await HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
 
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction(
+                "Login",
+                "Account");
         }
     }
 }
