@@ -58,7 +58,7 @@ namespace RaceDay.Part3.Services
             if (string.IsNullOrWhiteSpace(authenticationCookie))
                 return null;
 
-            // Verify the API session.
+            // Verify the login cookie against the Part 2 API.
             using var verifyRequest = new HttpRequestMessage(
                 HttpMethod.Get,
                 "api/auth/me");
@@ -330,8 +330,8 @@ namespace RaceDay.Part3.Services
                 "Cookie",
                 authenticationCookie);
 
-            // Only send the fields accepted by the API.
-            // The API identifies the user from its own cookie.
+            // Send only the properties accepted by the API.
+            // The API identifies the current user from its cookie.
             request.Content = JsonContent.Create(new
             {
                 model.FirstName,
@@ -372,6 +372,108 @@ namespace RaceDay.Part3.Services
             return (
                 false,
                 "Unable to save your profile."
+            );
+        }
+
+        // ======================================
+        // 8. GET ORGANISER PROFILE
+        // ======================================
+
+        public async Task<OrganiserProfileViewModel>
+            GetOrganiserProfileAsync(
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "api/profiles/organiser");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response =
+                await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not authorised to view this profile.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<OrganiserProfileViewModel>()
+                ?? new OrganiserProfileViewModel();
+        }
+
+        // ======================================
+        // 9. SAVE ORGANISER PROFILE
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            SaveOrganiserProfileAsync(
+                OrganiserProfileViewModel model,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Put,
+                "api/profiles/organiser");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                model.OrganiserName,
+                model.PhoneNumber
+            });
+
+            using var response =
+                await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException(
+                    "You are not authorised to update this profile.");
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                return (
+                    true,
+                    "Organiser profile saved successfully."
+                );
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                return (
+                    false,
+                    "Please check the required profile fields."
+                );
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (
+                false,
+                "Unable to save organiser profile."
             );
         }
     }
