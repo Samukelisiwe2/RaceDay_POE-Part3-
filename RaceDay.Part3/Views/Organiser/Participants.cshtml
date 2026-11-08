@@ -8,6 +8,7 @@
 
 <div class="container py-5">
 
+    <!-- BACK TO EVENT -->
     <a asp-controller="Events"
        asp-action="Details"
        asp-route-id="@eventId"
@@ -15,6 +16,7 @@
         ← Back to Event
     </a>
 
+    <!-- PAGE HEADER -->
     <div class="d-flex flex-wrap
         justify-content-between
         align-items-center gap-3 mt-4 mb-4">
@@ -32,31 +34,70 @@
         <span class="badge bg-primary fs-6 p-3">
             @Model.Count Registered
         </span>
-
     </div>
 
+    <!-- SUCCESS MESSAGE -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success" role="status">
+        <div class="alert alert-success alert-dismissible fade show"
+             role="status">
+
+            <strong>Success!</strong>
             @TempData["Success"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
         </div>
     }
 
+    <!-- ERROR MESSAGE -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+
+            <strong>Error!</strong>
+            @TempData["Error"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Close">
+            </button>
+        </div>
+    }
+
+    <!-- NO PARTICIPANTS -->
     @if (Model.Count == 0)
     {
         <div class="card shadow-sm">
             <div class="card-body p-5 text-center">
-                <h2 class="h5">No Participants Yet</h2>
+
+                <h2 class="h5 fw-bold">
+                    No Participants Yet
+                </h2>
 
                 <p class="text-muted">
                     No participants have registered
                     for this race yet.
                 </p>
+
+                <a asp-controller="Events"
+                   asp-action="Details"
+                   asp-route-id="@eventId"
+                   class="btn btn-outline-primary">
+                    View Event Details
+                </a>
+
             </div>
         </div>
     }
     else
     {
+        <!-- PARTICIPANT TABLE -->
         <div class="card shadow-sm">
             <div class="card-body p-0">
 
@@ -66,10 +107,25 @@
 
                         <thead class="table-light">
                             <tr>
-                                <th scope="col">Participant</th>
-                                <th scope="col">Category</th>
-                                <th scope="col">Race Number</th>
-                                <th scope="col">Status</th>
+                                <th scope="col" class="ps-4">
+                                    Participant
+                                </th>
+
+                                <th scope="col">
+                                    Category
+                                </th>
+
+                                <th scope="col">
+                                    Race Number
+                                </th>
+
+                                <th scope="col">
+                                    Status
+                                </th>
+
+                                <th scope="col">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
 
@@ -77,36 +133,57 @@
                             @foreach (var participant in Model)
                             {
                                 var badgeClass =
-                                    participant.EnrollmentStatus
-                                        == "Confirmed"
+                                    participant.EnrollmentStatus == "Confirmed"
                                         ? "bg-success"
-                                        : participant.EnrollmentStatus
-                                            == "Pending"
+                                        : participant.EnrollmentStatus == "Pending"
                                             ? "bg-warning text-dark"
-                                            : participant.EnrollmentStatus
-                                                == "Cancelled"
+                                            : participant.EnrollmentStatus == "Cancelled"
                                                 ? "bg-danger"
                                                 : "bg-secondary";
 
                                 <tr>
-                                    <td>
-                                        @participant.FullName
+                                    <!-- PARTICIPANT NAME -->
+                                    <td class="ps-4">
+                                        <strong>
+                                            @participant.FullName
+                                        </strong>
                                     </td>
 
+                                    <!-- CATEGORY -->
                                     <td>
                                         @participant.CategoryName
                                     </td>
 
+                                    <!-- RACE NUMBER -->
                                     <td>
-                                        <strong>
-                                            @participant.RaceNumber
-                                        </strong>
+                                        @participant.RaceNumber
                                     </td>
 
+                                    <!-- ENROLMENT STATUS -->
                                     <td>
                                         <span class="badge @badgeClass">
                                             @participant.EnrollmentStatus
                                         </span>
+                                    </td>
+
+                                    <!-- ACTIONS -->
+                                    <td>
+                                        @if (participant.EnrollmentStatus != "Cancelled")
+                                        {
+                                            <a asp-controller="Organiser"
+                                               asp-action="CaptureResult"
+                                               asp-route-eventId="@eventId"
+                                               asp-route-enrollmentId="@participant.EnrollmentId"
+                                               class="btn btn-sm btn-primary">
+                                                Record Result
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">
+                                                Entry Cancelled
+                                            </span>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -116,6 +193,14 @@
                 </div>
 
             </div>
+        </div>
+
+        <!-- INFORMATION MESSAGE -->
+        <div class="alert alert-info mt-4" role="note">
+            <strong>Result Management:</strong>
+            Select Record Result to capture a participant's
+            race performance. Completed results require
+            a valid start time, finish time and overall position.
         </div>
     }
 

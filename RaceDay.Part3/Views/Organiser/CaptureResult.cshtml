@@ -1,0 +1,140 @@
+﻿@model RaceDay.Part3.Models.ResultEntryViewModel
+
+@{
+    ViewData["Title"] = "Record Race Result";
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Organiser"
+       asp-action="Participants"
+       asp-route-id="@Model.EventId"
+       class="text-decoration-none">
+        ← Back to Participants
+    </a>
+
+    <h1 class="fw-bold mt-4">Record Race Result</h1>
+
+    <p class="text-muted mb-4">
+        Enter the participant's result information.
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+            @if (ViewBag.ParticipantName != null)
+            {
+                <div class="alert alert-info">
+                    <strong>Participant:</strong>
+                    @ViewBag.ParticipantName
+
+                    <div>
+                        <strong>Category:</strong>
+                        @ViewBag.CategoryName
+                    </div>
+
+                    <div>
+                        <strong>Race Number:</strong>
+                        @ViewBag.RaceNumber
+                    </div>
+                </div>
+            }
+
+            <form asp-controller="Organiser"
+                  asp-action="CaptureResult"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input asp-for="EventId" type="hidden" />
+                <input asp-for="EnrollmentId" type="hidden" />
+
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="ResultStatus"
+                           class="form-label"></label>
+
+                    <select asp-for="ResultStatus"
+                            class="form-select">
+                        <option value="Pending">
+                            Pending
+                        </option>
+
+                        <option value="Completed">
+                            Completed
+                        </option>
+
+                        <option value="Did Not Finish">
+                            Did Not Finish
+                        </option>
+
+                        <option value="Disqualified">
+                            Disqualified
+                        </option>
+                    </select>
+
+                    <span asp-validation-for="ResultStatus"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="StartTime"
+                               class="form-label"></label>
+
+                        <input asp-for="StartTime"
+                               type="datetime-local"
+                               class="form-control" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="FinishTime"
+                               class="form-label"></label>
+
+                        <input asp-for="FinishTime"
+                               type="datetime-local"
+                               class="form-control" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="OverallPosition"
+                               class="form-label"></label>
+
+                        <input asp-for="OverallPosition"
+                               type="number"
+                               min="1"
+                               class="form-control"
+                               placeholder="e.g. 1" />
+                    </div>
+
+                </div>
+
+                <div class="alert alert-light border mt-4">
+                    For a Completed result, enter the start
+                    time, finish time and overall position.
+                    The race must have taken place already.
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Save Race Result
+                </button>
+
+                <a asp-controller="Organiser"
+                   asp-action="Participants"
+                   asp-route-id="@Model.EventId"
+                   class="btn btn-outline-secondary ms-2">
+                    Cancel
+                </a>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

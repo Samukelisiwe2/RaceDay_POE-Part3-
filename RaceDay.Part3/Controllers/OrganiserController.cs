@@ -36,6 +36,141 @@ namespace RaceDay.Part3.Controllers
         {
             return View();
         }
+        // ======================================
+        // DISPLAY RESULT ENTRY FORM
+        // ======================================
+
+        [HttpGet]
+        public async Task<IActionResult> CaptureResult(
+            int eventId,
+            int enrollmentId)
+        {
+            if (eventId <= 0 || enrollmentId <= 0)
+                return NotFound();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                // Confirm that this enrolment belongs
+                // to an event managed by this Organiser.
+                var enrolments =
+                    await _api.GetEventEnrolmentsAsync(eventId, cookie);
+
+                var enrolment = enrolments.FirstOrDefault(
+                    e => e.EnrollmentId == enrollmentId);
+
+                if (enrolment == null)
+                    return NotFound();
+
+                ViewBag.ParticipantName = enrolment.FullName;
+                ViewBag.CategoryName = enrolment.CategoryName;
+                ViewBag.RaceNumber = enrolment.RaceNumber;
+
+                return View(new ResultEntryViewModel
+                {
+                    EventId = eventId,
+                    EnrollmentId = enrollmentId,
+                    ResultStatus = "Pending"
+                });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to load the participant details.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The request timed out.";
+            }
+
+            return RedirectToAction(
+                nameof(Participants),
+                new { id = eventId });
+        }
+
+        // ======================================
+        // SAVE PARTICIPANT RESULT
+        // ======================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CaptureResult(
+            ResultEntryViewModel model)
+        {
+            if (model.EventId <= 0 || model.EnrollmentId <= 0)
+                return BadRequest();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                // Recheck event ownership before forwarding
+                // the enrolment to the Part 2 API.
+                var enrolments =
+                    await _api.GetEventEnrolmentsAsync(
+                        model.EventId, cookie);
+
+                if (!enrolments.Any(e =>
+                    e.EnrollmentId == model.EnrollmentId))
+                {
+                    return NotFound();
+                }
+
+                var result =
+                    await _api.CreateResultAsync(model, cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+
+                    return RedirectToAction(
+                        nameof(Participants),
+                        new { id = model.EventId });
+                }
+
+                ModelState.AddModelError("", result.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (HttpRequestException)
+            {
+                ModelState.AddModelError(
+                    "", "Unable to connect to RaceDay API.");
+            }
+            catch (TaskCanceledException)
+            {
+                ModelState.AddModelError(
+                    "", "The request timed out.");
+            }
+
+            return View(model);
+        }
+
 
         // ======================================
         // 2. VIEW ORGANISER PROFILE
@@ -144,63 +279,63 @@ namespace RaceDay.Part3.Controllers
         {
             return View(new EventCreateViewModel());
         }
+        
+// ======================================
+// VIEW ENROLLED PARTICIPANTS
+// ======================================
 
-        // ======================================
-        // VIEW ENROLLED PARTICIPANTS
-        // ======================================
+[HttpGet]
+public async Task<IActionResult> Participants(int id)
+{
+    if (id <= 0)
+        return NotFound();
 
-        [HttpGet]
-        public async Task<IActionResult> Participants(int id)
-        {
-            if (id <= 0)
-                return NotFound();
+    var cookie = GetApiCookie();
 
-            var cookie = GetApiCookie();
+    if (string.IsNullOrWhiteSpace(cookie))
+        return await ExpireSessionAsync();
 
-            if (string.IsNullOrWhiteSpace(cookie))
-                return await ExpireSessionAsync();
+    try
+    {
+        var raceEvent =
+            await _api.GetEventAsync(id, cookie);
 
-            try
-            {
-                var raceEvent =
-                    await _api.GetEventAsync(id, cookie);
+        if (raceEvent == null)
+            return NotFound();
 
-                if (raceEvent == null)
-                    return NotFound();
+        var enrolments =
+            await _api.GetEventEnrolmentsAsync(id, cookie);
 
-                var enrolments =
-                    await _api.GetEventEnrolmentsAsync(id, cookie);
+        ViewBag.EventId = id;
+        ViewBag.EventName = raceEvent.EventName;
 
-                ViewBag.EventId = id;
-                ViewBag.EventName = raceEvent.EventName;
+        return View(enrolments);
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return await ExpireSessionAsync();
+    }
+    catch (System.Security.SecurityException)
+    {
+        return Forbid();
+    }
+    catch (KeyNotFoundException)
+    {
+        return NotFound();
+    }
+    catch (HttpRequestException)
+    {
+        TempData["Error"] =
+            "Unable to load enrolled participants.";
+    }
+    catch (TaskCanceledException)
+    {
+        TempData["Error"] =
+            "The API request timed out.";
+    }
 
-                return View(enrolments);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return await ExpireSessionAsync();
-            }
-            catch (System.Security.SecurityException)
-            {
-                return Forbid();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (HttpRequestException)
-            {
-                TempData["Error"] =
-                    "Unable to load enrolled participants.";
-            }
-            catch (TaskCanceledException)
-            {
-                TempData["Error"] =
-                    "The API request timed out.";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
+    return RedirectToAction(nameof(Index));
+}
 
         // ======================================
         // 5. SUBMIT NEW EVENT

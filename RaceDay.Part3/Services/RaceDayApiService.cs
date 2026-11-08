@@ -836,6 +836,77 @@ namespace RaceDay.Part3.Services
                 .ReadFromJsonAsync<List<EventEnrolmentViewModel>>()
                 ?? new List<EventEnrolmentViewModel>();
         }
+        // ======================================
+        // CREATE RACE RESULT THROUGH PART 2 API
+        // ======================================
+
+        public async Task<(bool Success, string Message)>
+            CreateResultAsync(
+                ResultEntryViewModel model,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+            {
+                throw new UnauthorizedAccessException(
+                    "Your API session has expired.");
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"api/enrolments/{model.EnrollmentId}/results");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                model.ResultStatus,
+                model.StartTime,
+                model.FinishTime,
+                model.OverallPosition
+            });
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+                return (false, "You cannot record results for this event.");
+
+            if (response.StatusCode == HttpStatusCode.Created)
+                return (true, "Race result recorded successfully.");
+
+            if (response.StatusCode == HttpStatusCode.Conflict)
+                return (false,
+                    "A result already exists for this participant.");
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var error = await response.Content
+                    .ReadFromJsonAsync<ApiErrorResponse>();
+
+                return (false,
+                    error?.Message ??
+                    "Check the result details and event date.");
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return (false, "The enrolment was not found.");
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Result creation was not completed.");
+        }
+
+        // Helper for API error messages.
+        // Place this class OUTSIDE RaceDayApiService,
+        // but inside the RaceDay.Part3.Services namespace.
+        public class ApiErrorResponse
+        {
+            public string? Message { get; set; }
+        }
+
 
 
     }
