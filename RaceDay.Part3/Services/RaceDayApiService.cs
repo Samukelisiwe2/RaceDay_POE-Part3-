@@ -538,6 +538,89 @@ namespace RaceDay.Part3.Services
             return (false, "Event creation was not completed.");
         }
 
+        // 11. GET ONE EVENT FOR EDITING
+
+        public async Task<EventViewModel?> GetEventAsync(
+            int eventId,
+            string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/events/{eventId}");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return null;
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content
+                .ReadFromJsonAsync<EventViewModel>();
+        }
+
+
+        // 12. UPDATE EXISTING EVENT
+
+        public async Task<(bool Success, string Message)>
+            UpdateEventAsync(
+                int eventId,
+                EventCreateViewModel model,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Put,
+                $"api/events/{eventId}");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            request.Content = JsonContent.Create(new
+            {
+                model.EventName,
+                model.Description,
+                model.EventDate,
+                model.ClosingDate,
+                model.Location,
+                model.EventType,
+                model.Status
+            });
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+                return (false, "You do not own this event.");
+
+            if (response.IsSuccessStatusCode)
+                return (true, "Event updated successfully.");
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return (false, "Event not found.");
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+                return (false, "Check the event details and dates.");
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Unable to update the event.");
+        }
+
     }
 }
 

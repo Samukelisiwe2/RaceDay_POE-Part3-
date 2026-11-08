@@ -4,37 +4,152 @@
     ViewData["Title"] = "Race Events";
 }
 
-<div class="container mt-4">
-    <h1>RaceDay Events</h1>
-    <p class="text-muted">
-        Browse upcoming running events.
-    </p>
+<div class="container py-5">
 
-    @if (Model == null || !Model.Any())
+    <div class="d-flex flex-column flex-md-row
+        justify-content-between align-items-md-center
+        gap-3 mb-4">
+
+        <div>
+            <h1 class="display-6 fw-bold">
+                RaceDay Events
+            </h1>
+
+            <p class="text-muted">
+                Discover and manage sporting events.
+            </p>
+        </div>
+
+        @if (User.IsInRole("Organiser"))
+        {
+            <a asp-controller="Organiser"
+               asp-action="CreateEvent"
+               class="btn btn-primary">
+                + Create Event
+            </a>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
     {
-        <div class="alert alert-info">
-            Event information will appear here
-            once the API connection is ready.
+        <div class="alert alert-success" role="status">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @ViewBag.Error
+        </div>
+    }
+    else if (Model == null || Model.Count == 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+
+                <h2 class="h5">No Events Available</h2>
+
+                <p class="text-muted">
+                    No sporting events have been
+                    created yet.
+                </p>
+
+                @if (User.IsInRole("Organiser"))
+                {
+                    <a asp-controller="Organiser"
+                       asp-action="CreateEvent"
+                       class="btn btn-primary">
+                        Create Your First Event
+                    </a>
+                }
+            </div>
         </div>
     }
     else
     {
-        @foreach (var raceEvent in Model)
-        {
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h4>@raceEvent.EventName</h4>
-                    <p>@raceEvent.Description</p>
-                    <p>
-                        <strong>Location:</strong>
-                        @raceEvent.Location
-                    </p>
-                    <p>
-                        <strong>Date:</strong>
-                        @raceEvent.EventDate.ToShortDateString()
-                    </p>
+        <div class="row g-4">
+
+            @foreach (var raceEvent in Model)
+            {
+                var statusClass =
+                    raceEvent.Status == "Open"
+                        ? "bg-success"
+                        : raceEvent.Status == "Planned"
+                            ? "bg-primary"
+                            : raceEvent.Status == "Cancelled"
+                                ? "bg-danger"
+                                : "bg-secondary";
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm h-100">
+
+                        <div class="card-body p-4">
+
+                            <div class="d-flex
+                                justify-content-between
+                                align-items-start gap-2 mb-3">
+
+                                <h2 class="h5 fw-bold mb-0">
+                                    @raceEvent.EventName
+                                </h2>
+
+                                <span class="badge @statusClass">
+                                    @raceEvent.Status
+                                </span>
+                            </div>
+
+                            <p class="text-muted">
+                                @raceEvent.Description
+                            </p>
+
+                            <hr />
+
+                            <p>
+                                <strong>Date:</strong>
+                                @raceEvent.EventDate.ToString("dd MMM yyyy")
+                            </p>
+
+                            <p>
+                                <strong>Location:</strong>
+                                @raceEvent.Location
+                            </p>
+
+                            <p>
+                                <strong>Type:</strong>
+                                @raceEvent.EventType
+                            </p>
+
+                            <p>
+                                <strong>Registration Closes:</strong>
+                                @raceEvent.ClosingDate.ToString("dd MMM yyyy")
+                            </p>
+
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+
+                                <a asp-controller="Events"
+                                   asp-action="Details"
+                                   asp-route-id="@raceEvent.EventId"
+                                   class="btn btn-outline-primary">
+                                    View Details
+                                </a>
+
+                                @if (User.IsInRole("Organiser"))
+                                {
+                                    <a asp-controller="Organiser"
+                                       asp-action="EditEvent"
+                                       asp-route-id="@raceEvent.EventId"
+                                       class="btn btn-primary">
+                                        Edit Event
+                                    </a>
+                                }
+
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        }
+            }
+
+        </div>
     }
 </div>
