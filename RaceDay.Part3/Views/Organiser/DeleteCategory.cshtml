@@ -1,0 +1,97 @@
+﻿@model RaceDay.Part3.Models.RaceCategoryViewModel
+
+@{
+    ViewData["Title"] = "Delete Race Category";
+    bool hasParticipants = Model.CurrentParticipants > 0;
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Organiser"
+       asp-action="Categories"
+       asp-route-id="@Model.EventId"
+       class="text-decoration-none">
+        ← Back to Categories
+    </a>
+
+    <h1 class="fw-bold mt-4 mb-3">
+        Delete Race Category
+    </h1>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+            <h2 class="h5 fw-bold">
+                @Model.CategoryName
+            </h2>
+
+            <p>
+                <strong>Distance:</strong>
+                @Model.DistanceKm km
+            </p>
+
+            <p>
+                <strong>Entry Fee:</strong>
+                R @Model.EntryFee.ToString("N2")
+            </p>
+
+            <p>
+                <strong>Enrolled Participants:</strong>
+                @Model.CurrentParticipants
+            </p>
+
+            @if (hasParticipants)
+            {
+                <div class="alert alert-danger">
+                    This category has registered participants
+                    and cannot be deleted.
+                </div>
+
+                <a asp-controller="Organiser"
+                   asp-action="Categories"
+                   asp-route-id="@Model.EventId"
+                   class="btn btn-outline-secondary">
+                    Back to Categories
+                </a>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    Are you sure you want to delete this category?
+                    This action cannot be undone.
+                </div>
+
+                <form asp-controller="Organiser"
+                      asp-action="DeleteCategory"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden"
+                           name="eventId"
+                           value="@Model.EventId" />
+
+                    <input type="hidden"
+                           name="categoryId"
+                           value="@Model.CategoryId" />
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit"
+                                class="btn btn-danger">
+                            Yes, Delete Category
+                        </button>
+
+                        <a asp-controller="Organiser"
+                           asp-action="Categories"
+                           asp-route-id="@Model.EventId"
+                           class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            }
+
+        </div>
+    </div>
+
+</div>

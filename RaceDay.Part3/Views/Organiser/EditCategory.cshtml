@@ -1,0 +1,168 @@
+﻿@model RaceDay.Part3.Models.CategoryCreateViewModel
+
+@{
+    ViewData["Title"] = "Edit Race Category";
+
+    int categoryId = ViewBag.CategoryId is int id
+        ? id
+        : 0;
+}
+
+<div class="container py-5">
+
+    <!-- BACK BUTTON -->
+    <a asp-controller="Organiser"
+       asp-action="Categories"
+       asp-route-id="@Model.EventId"
+       class="text-decoration-none">
+        ← Back to Categories
+    </a>
+
+    <!-- PAGE HEADER -->
+    <div class="mt-4 mb-4">
+        <h1 class="fw-bold">
+            Edit Race Category
+        </h1>
+
+        <p class="text-muted">
+            Update the race category details below.
+        </p>
+    </div>
+
+    <!-- EDIT FORM -->
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+            <form asp-controller="Organiser"
+                  asp-action="EditCategory"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <!-- REQUIRED IDS -->
+                <input type="hidden"
+                       name="categoryId"
+                       value="@categoryId" />
+
+                <input asp-for="EventId"
+                       type="hidden" />
+
+                <!-- VALIDATION -->
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3">
+                </div>
+
+                <div class="row g-3">
+
+                    <!-- CATEGORY NAME -->
+                    <div class="col-md-6">
+
+                        <label asp-for="CategoryName"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="CategoryName"
+                               class="form-control"
+                               maxlength="100"
+                               required />
+
+                        <span asp-validation-for="CategoryName"
+                              class="text-danger">
+                        </span>
+                    </div>
+
+                    <!-- DISTANCE -->
+                    <div class="col-md-6">
+
+                        <label asp-for="DistanceKm"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="DistanceKm"
+                               type="number"
+                               min="0.01"
+                               max="9999.99"
+                               step="0.01"
+                               class="form-control"
+                               required />
+
+                        <span asp-validation-for="DistanceKm"
+                              class="text-danger">
+                        </span>
+                    </div>
+
+                    <!-- ENTRY FEE -->
+                    <div class="col-md-6">
+
+                        <label asp-for="EntryFee"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="EntryFee"
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               class="form-control"
+                               required />
+
+                        <span asp-validation-for="EntryFee"
+                              class="text-danger">
+                        </span>
+                    </div>
+
+                    <!-- MAXIMUM PARTICIPANTS -->
+                    <div class="col-md-6">
+
+                        <label asp-for="MaxParticipants"
+                               class="form-label">
+                        </label>
+
+                        <input asp-for="MaxParticipants"
+                               type="number"
+                               min="1"
+                               step="1"
+                               class="form-control"
+                               required />
+
+                        <span asp-validation-for="MaxParticipants"
+                              class="text-danger">
+                        </span>
+                    </div>
+
+                </div>
+
+                <!-- IMPORTANT RULE -->
+                <div class="alert alert-info mt-4">
+                    <strong>Important:</strong>
+                    The maximum number of participants
+                    cannot be reduced below the number
+                    already enrolled in this category.
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="d-flex flex-wrap gap-2 mt-4">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        Save Changes
+                    </button>
+
+                    <a asp-controller="Organiser"
+                       asp-action="Categories"
+                       asp-route-id="@Model.EventId"
+                       class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

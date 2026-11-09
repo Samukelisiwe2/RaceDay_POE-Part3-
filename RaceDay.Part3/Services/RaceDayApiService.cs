@@ -1050,6 +1050,70 @@ namespace RaceDay.Part3.Services
             return (false, "Category update was not completed.");
         }
 
+        public async Task<(bool Success, string Message)>
+            DeleteCategoryAsync(
+                int categoryId,
+                string authenticationCookie)
+        {
+            if (categoryId <= 0)
+                return (false, "Invalid category ID.");
+
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Delete,
+                $"api/categories/{categoryId}");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Forbidden)
+            {
+                throw new System.Security.SecurityException(
+                    "You do not have permission to delete this category.");
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.NoContent)
+            {
+                return (true, "Race category deleted successfully.");
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Conflict)
+            {
+                return (false,
+                    "This category cannot be deleted because " +
+                    "participants have already enrolled.");
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.NotFound)
+            {
+                return (false, "The category no longer exists.");
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.BadRequest)
+            {
+                return (false, "The API rejected this deletion.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Category deletion was not confirmed.");
+        }
+
 
 
     }

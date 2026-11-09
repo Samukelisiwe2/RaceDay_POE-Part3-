@@ -540,6 +540,150 @@ namespace RaceDay.Part3.Controllers
 
             return View(model);
         }
+        // =====================================
+        // DELETE CATEGORY - CONFIRMATION PAGE
+        // =====================================
+
+        [HttpGet]
+        public async Task<IActionResult> DeleteCategory(
+            int eventId,
+            int categoryId)
+        {
+            if (eventId <= 0 || categoryId <= 0)
+                return NotFound();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                // The Part 2 API verifies event ownership.
+                await _api.GetEventEnrolmentsAsync(
+                    eventId, cookie);
+
+                var categories =
+                    await _api.GetCategoriesAsync(eventId, cookie);
+
+                var category = categories.FirstOrDefault(
+                    c => c.CategoryId == categoryId);
+
+                if (category == null)
+                    return NotFound();
+
+                return View(category);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to load the category.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The request timed out.";
+            }
+
+            return RedirectToAction(
+                nameof(Categories),
+                new { id = eventId });
+        }
+
+        // =====================================
+        // DELETE CATEGORY - CONFIRMED POST
+        // =====================================
+
+        [HttpPost]
+        [ActionName("DeleteCategory")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCategoryConfirmed(
+            int eventId,
+            int categoryId)
+        {
+            if (eventId <= 0 || categoryId <= 0)
+                return BadRequest();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                // Check ownership and prevent changing another event.
+                await _api.GetEventEnrolmentsAsync(
+                    eventId, cookie);
+
+                var categories =
+                    await _api.GetCategoriesAsync(eventId, cookie);
+
+                var category = categories.FirstOrDefault(
+                    c => c.CategoryId == categoryId);
+
+                if (category == null)
+                    return NotFound();
+
+                if (category.CurrentParticipants > 0)
+                {
+                    TempData["Error"] =
+                        "Cannot delete a category with enrolled participants.";
+
+                    return RedirectToAction(
+                        nameof(Categories),
+                        new { id = eventId });
+                }
+
+                // The API enforces the final enrolment check.
+                var result = await _api.DeleteCategoryAsync(
+                    categoryId, cookie);
+
+                if (result.Success)
+                    TempData["Success"] = result.Message;
+                else
+                    TempData["Error"] = result.Message;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to connect to RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The request timed out. Check whether the " +
+                    "category still exists before retrying.";
+            }
+
+            return RedirectToAction(
+                nameof(Categories),
+                new { id = eventId });
+        }
+
 
         // =====================================
         // 10. VIEW PARTICIPANTS
