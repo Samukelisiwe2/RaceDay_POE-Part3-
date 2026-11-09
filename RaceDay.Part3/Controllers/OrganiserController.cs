@@ -1239,6 +1239,142 @@ namespace RaceDay.Part3.Controllers
         }
 
         // =====================================
+        // DELETE EVENT - CONFIRMATION PAGE
+        // =====================================
+
+        [HttpGet]
+        public async Task<IActionResult> DeleteEvent(int id)
+        {
+            if (id <= 0)
+                return NotFound();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                // Verify ownership through the Part 2 API.
+                await _api.GetEventEnrolmentsAsync(id, cookie);
+
+                var raceEvent =
+                    await _api.GetEventAsync(id, cookie);
+
+                if (raceEvent == null)
+                    return NotFound();
+
+                var categories =
+                    await _api.GetCategoriesAsync(id, cookie);
+
+                ViewBag.CategoryCount = categories.Count;
+
+                return View(raceEvent);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to load the event.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The API request timed out.";
+            }
+
+            return RedirectToAction("Index", "Events");
+        }
+
+
+        // =====================================
+        // DELETE EVENT - CONFIRMED POST
+        // =====================================
+
+        [HttpPost]
+        [ActionName("DeleteEvent")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteEventConfirmed(int id)
+        {
+            if (id <= 0)
+                return BadRequest();
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                // Revalidate ownership and associated categories.
+                await _api.GetEventEnrolmentsAsync(id, cookie);
+
+                var categories =
+                    await _api.GetCategoriesAsync(id, cookie);
+
+                if (categories.Count > 0)
+                {
+                    TempData["Error"] =
+                        "Cannot delete an event with race categories.";
+
+                    return RedirectToAction(
+                        nameof(DeleteEvent),
+                        new { id });
+                }
+
+                var result =
+                    await _api.DeleteEventAsync(id, cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+
+                    return RedirectToAction("Index", "Events");
+                }
+
+                TempData["Error"] = result.Message;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (System.Security.SecurityException)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to connect to RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The request timed out. Check whether the " +
+                    "event still exists before retrying.";
+            }
+
+            return RedirectToAction(
+                nameof(DeleteEvent),
+                new { id });
+        }
+
+        // =====================================
         // 16. RESULT FORM VIEW INFORMATION
         // =====================================
 

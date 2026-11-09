@@ -1114,6 +1114,65 @@ namespace RaceDay.Part3.Services
             return (false, "Category deletion was not confirmed.");
         }
 
+        public async Task<(bool Success, string Message)>
+            DeleteEventAsync(
+                int eventId,
+                string authenticationCookie)
+        {
+            if (eventId <= 0)
+                return (false, "Invalid event ID.");
+
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Delete,
+                $"api/events/{eventId}");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Unauthorized)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Forbidden)
+            {
+                throw new System.Security.SecurityException(
+                    "You do not own this event.");
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.NoContent)
+            {
+                return (true, "Event deleted successfully.");
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Conflict)
+            {
+                return (false,
+                    "This event cannot be deleted because " +
+                    "it still has race categories.");
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.NotFound)
+            {
+                return (false, "Event not found.");
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (false, "Event deletion was not confirmed.");
+        }
+
 
 
     }

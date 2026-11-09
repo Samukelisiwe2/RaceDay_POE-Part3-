@@ -1,0 +1,97 @@
+﻿@model RaceDay.Part3.Models.Events.EventViewModel
+
+@{
+    ViewData["Title"] = "Delete Event";
+
+    int categoryCount =
+        ViewBag.CategoryCount is int count ? count : 0;
+
+    bool canDelete = categoryCount == 0;
+}
+
+<div class="container py-5">
+
+    <a asp-controller="Events"
+       asp-action="Details"
+       asp-route-id="@Model.EventId"
+       class="text-decoration-none">
+        ← Back to Event Details
+    </a>
+
+    <div class="mt-4 mb-4">
+        <h1 class="fw-bold">Delete Event</h1>
+        <p class="text-muted">
+            Review the event before making any changes.
+        </p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+            <h2 class="h4 fw-bold">
+                @Model.EventName
+            </h2>
+
+            <p>
+                <strong>Date:</strong>
+                @Model.EventDate.ToString("dd MMM yyyy")
+            </p>
+
+            <p>
+                <strong>Location:</strong>
+                @Model.Location
+            </p>
+
+            <p>
+                <strong>Race Categories:</strong>
+                @categoryCount
+            </p>
+
+            @if (!canDelete)
+            {
+                <div class="alert alert-warning">
+                    <strong>Deletion unavailable.</strong>
+                    This event has race categories.
+                    The API does not allow it to be deleted.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    <strong>Warning:</strong>
+                    Deleting this event is permanent.
+                    Only delete an event you no longer need.
+                </div>
+
+                <form asp-controller="Organiser"
+                      asp-action="DeleteEvent"
+                      asp-route-id="@Model.EventId"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit"
+                            class="btn btn-danger">
+                        Yes, Delete Event
+                    </button>
+                </form>
+            }
+
+            <a asp-controller="Events"
+               asp-action="Details"
+               asp-route-id="@Model.EventId"
+               class="btn btn-outline-secondary mt-3">
+                Cancel
+            </a>
+
+        </div>
+    </div>
+
+</div>

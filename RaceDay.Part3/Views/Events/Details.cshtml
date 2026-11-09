@@ -49,6 +49,13 @@
                 Manage Categories
             </a>
 
+            <a asp-controller="Organiser"
+               asp-action="DeleteEvent"
+               asp-route-id="@Model.EventId"
+               class="btn btn-outline-danger">
+                Delete Event
+            </a>
+
         }
 
     </div>
