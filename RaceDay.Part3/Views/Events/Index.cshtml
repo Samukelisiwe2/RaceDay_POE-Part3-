@@ -30,8 +30,124 @@
         }
     </div>
 
-    @if (TempData["Success"] != null)
-    {
+   
+    <!-- EVENT SEARCH AND FILTERS -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+
+            <h2 class="h5 fw-bold mb-3">
+                Find a Race
+            </h2>
+
+            <form asp-controller="Events"
+                  asp-action="Index"
+                  method="get">
+
+                <div class="row g-3">
+
+                    <!-- Search -->
+                    <div class="col-md-4">
+                        <label for="search"
+                               class="form-label">
+                            Search Events
+                        </label>
+
+                        <input type="text"
+                               id="search"
+                               name="search"
+                               value="@ViewBag.Search"
+                               class="form-control"
+                               placeholder="Event name or location" />
+                    </div>
+
+                    <!-- Event Type -->
+                    <div class="col-md-3">
+                        <label for="eventType"
+                               class="form-label">
+                            Race Type
+                        </label>
+
+                        <select id="eventType"
+                                name="eventType"
+                                class="form-select">
+
+                            <option value="">
+                                All Types
+                            </option>
+
+                            <option value="Run"
+                                    selected="@(ViewBag.EventType == "Run")">
+                                Running
+                            </option>
+
+                            <option value="Walk"
+                                    selected="@(ViewBag.EventType == "Walk")">
+                                Walking
+                            </option>
+
+                            <option value="Cycle"
+                                    selected="@(ViewBag.EventType == "Cycle")">
+                                Cycling
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Event Status -->
+                    <div class="col-md-3">
+                        <label for="status"
+                               class="form-label">
+                            Status
+                        </label>
+
+                        <select id="status"
+                                name="status"
+                                class="form-select">
+
+                            <option value="">
+                                All Statuses
+                            </option>
+
+                            @foreach (var statusOption in new[]
+                            {
+                            "Planned",
+                            "Open",
+                            "Closed",
+                            "Completed",
+                            "Cancelled"
+                        })
+                            {
+                                <option value="@statusOption"
+                                        selected="@(ViewBag.Status == statusOption)">
+                                    @statusOption
+                                </option>
+                            }
+
+                        </select>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="d-flex gap-2 flex-wrap">
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                Search
+                            </button>
+
+                            <a asp-controller="Events"
+                               asp-action="Index"
+                               class="btn btn-outline-secondary">
+                                Clear
+                            </a>
+
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
         <div class="alert alert-success" role="status">
             @TempData["Success"]
         </div>

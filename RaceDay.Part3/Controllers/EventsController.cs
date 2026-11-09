@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RaceDay.Part3.Models.Events;
 using RaceDay.Part3.Services;
+using System.Linq;
 
 namespace RaceDay.Part3.Controllers
 {
@@ -28,34 +29,74 @@ namespace RaceDay.Part3.Controllers
         // DISPLAY EVENTS FROM PART 2 API
         // ======================================
 
-        [HttpGet]
-        public async Task<IActionResult> Index()
-        {
-            var sessionId =
-                User.FindFirst("ApiSessionId")?.Value;
 
-            var apiCookie =
-                _sessions.GetApiCookie(sessionId);
+        [HttpGet]
+        public async Task<IActionResult> Index(
+            string? search,
+            string? eventType,
+            string? status)
+        {
+            var sessionId = User.FindFirst("ApiSessionId")?.Value;
+            var apiCookie = _sessions.GetApiCookie(sessionId);
 
             if (string.IsNullOrWhiteSpace(apiCookie))
             {
-                return RedirectToAction(
-                    "Login",
-                    "Account");
+                return RedirectToAction("Login", "Account");
             }
+
+            ViewBag.Search = search;
+            ViewBag.EventType = eventType;
+            ViewBag.Status = status;
 
             try
             {
-                var events =
-                    await _api.GetEventsAsync(apiCookie);
+                var events = await _api.GetEventsAsync(apiCookie);
+
+                // Filter by event name, description or location.
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    events = events.Where(e =>
+                        (e.EventName?.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase) ?? false)
+                        ||
+                        (e.Description?.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase) ?? false)
+                        ||
+                        (e.Location?.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase) ?? false)
+                    ).ToList();
+                }
+
+                // Filter by race type.
+                if (!string.IsNullOrWhiteSpace(eventType))
+                {
+                    events = events.Where(e =>
+                        string.Equals(
+                            e.EventType,
+                            eventType,
+                            StringComparison.OrdinalIgnoreCase)
+                    ).ToList();
+                }
+
+                // Filter by event status.
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    events = events.Where(e =>
+                        string.Equals(
+                            e.Status,
+                            status,
+                            StringComparison.OrdinalIgnoreCase)
+                    ).ToList();
+                }
 
                 return View(events);
             }
             catch (UnauthorizedAccessException)
             {
-                return RedirectToAction(
-                    "Login",
-                    "Account");
+                return RedirectToAction("Login", "Account");
             }
             catch (HttpRequestException)
             {
@@ -70,6 +111,7 @@ namespace RaceDay.Part3.Controllers
 
             return View(new List<EventViewModel>());
         }
+
         // ======================================
         // DISPLAY SINGLE RACE EVENT
         // ======================================
