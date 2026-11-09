@@ -290,6 +290,67 @@ namespace RaceDay.Part3.Controllers
 
             return View(model);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadBanner(
+            int id,
+            IFormFile file)
+        {
+            if (id <= 0)
+                return NotFound();
+
+            if (file == null || file.Length == 0)
+            {
+                TempData["Error"] = "Please select an image.";
+                return RedirectToAction(nameof(EditEvent), new { id });
+            }
+
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                TempData["Error"] = "Maximum image size is 5 MB.";
+                return RedirectToAction(nameof(EditEvent), new { id });
+            }
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                var result = await _api.UploadEventBannerAsync(
+                    id, file, cookie);
+
+                if (result.Success)
+                {
+                    TempData["Success"] = result.Message;
+
+                    return RedirectToAction(
+                        "Details",
+                        "Events",
+                        new { id });
+                }
+
+                TempData["Error"] = result.Message;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Could not connect to RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] =
+                    "The upload request timed out.";
+            }
+
+            return RedirectToAction(nameof(EditEvent), new { id });
+        }
+
 
         // =====================================
         // 8. VIEW RACE CATEGORIES

@@ -8,6 +8,7 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using RaceDay.Part3.Models;
 using RaceDay.Part3.Models.Events;
+using Microsoft.AspNetCore.Http;
 
 namespace RaceDay.Part3.Services
 {
@@ -1203,6 +1204,74 @@ namespace RaceDay.Part3.Services
             var data = await response.Content.ReadAsByteArrayAsync();
 
             return (data, contentType);
+        }
+
+        public async Task<(bool Success, string Message)>
+            UploadEventBannerAsync(
+                int eventId,
+                IFormFile file,
+                string authenticationCookie)
+        {
+            if (eventId <= 0)
+                return (false, "Invalid event ID.");
+
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            if (file == null || file.Length == 0)
+                return (false, "Please select an image.");
+
+            if (file.Length > 5 * 1024 * 1024)
+                return (false, "Maximum image size is 5 MB.");
+
+            using var form = new MultipartFormDataContent();
+            using var stream = file.OpenReadStream();
+            using var imageContent = new StreamContent(stream);
+
+            imageContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    file.ContentType == "image/png"
+                        ? "image/png"
+                        : "image/jpeg");
+
+            form.Add(imageContent, "file", file.FileName);
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"api/events/{eventId}/banner");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            request.Content = form;
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Forbidden)
+                return (false, "You do not own this event.");
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Created)
+                return (true, "Event banner uploaded successfully.");
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.BadRequest)
+                return (false, "Only valid JPEG or PNG images up to 5 MB are allowed.");
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.NotFound)
+                return (false, "Event not found.");
+
+            if (!response.IsSuccessStatusCode)
+                return (false, "The banner upload failed. Please try again.");
+
+            return (true, "Event banner uploaded successfully.");
         }
 
 
