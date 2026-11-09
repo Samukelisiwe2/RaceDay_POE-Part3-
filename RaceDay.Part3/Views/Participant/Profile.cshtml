@@ -139,6 +139,60 @@
                 </div>
 
             </form>
+
+            <!-- PARTICIPANT PROFILE PICTURE -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-body p-4">
+
+                    <h2 class="h5 fw-bold mb-3">
+                        My Profile Picture
+                    </h2>
+
+                    <div class="mb-3">
+                        <img src="@Url.Action("Picture", "Participant")"
+                             alt="My profile picture"
+                             class="rounded-circle border"
+                             width="140"
+                             height="140"
+                             style="object-fit: cover;"
+                             onerror="this.style.display='none';" />
+                    </div>
+
+                    <p class="text-muted">
+                        Upload a JPEG or PNG picture.
+                        Maximum file size: 5 MB.
+                    </p>
+
+                    <form asp-controller="Participant"
+                          asp-action="UploadPicture"
+                          method="post"
+                          enctype="multipart/form-data">
+
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label for="profilePicture"
+                                   class="form-label">
+                                Choose Profile Picture
+                            </label>
+
+                            <input type="file"
+                                   id="profilePicture"
+                                   name="file"
+                                   class="form-control"
+                                   accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                                   required />
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            Upload Profile Picture
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+
         </div>
     </div>
 

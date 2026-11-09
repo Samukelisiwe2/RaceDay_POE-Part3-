@@ -371,6 +371,98 @@ namespace RaceDay.Part3.Controllers
 
             return _sessions.GetApiCookie(sessionId);
         }
+        // ======================================
+        // UPLOAD PARTICIPANT PROFILE PICTURE
+        // ======================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(6 * 1024 * 1024)]
+        public async Task<IActionResult> UploadPicture(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                TempData["Error"] = "Please select a picture.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            if (file.Length > 5 * 1024 * 1024)
+            {
+                TempData["Error"] = "Maximum image size is 5 MB.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return await ExpireSessionAsync();
+
+            try
+            {
+                var result = await _api.UploadParticipantPictureAsync(
+                    file, cookie);
+
+                if (result.Success)
+                    TempData["Success"] = result.Message;
+                else
+                    TempData["Error"] = result.Message;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return await ExpireSessionAsync();
+            }
+            catch (HttpRequestException)
+            {
+                TempData["Error"] =
+                    "Unable to connect to the RaceDay API.";
+            }
+            catch (TaskCanceledException)
+            {
+                TempData["Error"] = "Picture upload timed out.";
+            }
+
+            return RedirectToAction(nameof(Profile));
+        }
+
+        // ======================================
+        // DISPLAY PARTICIPANT PROFILE PICTURE
+        // ======================================
+
+        [HttpGet]
+        public async Task<IActionResult> Picture()
+        {
+            var cookie = GetApiCookie();
+
+            if (string.IsNullOrWhiteSpace(cookie))
+                return Unauthorized();
+
+            try
+            {
+                var picture = await _api.GetParticipantPictureAsync(cookie);
+
+                if (picture == null)
+                    return NotFound();
+
+                Response.Headers.CacheControl = "private, no-store";
+
+                return File(
+                    picture.Value.Data,
+                    picture.Value.ContentType);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (HttpRequestException)
+            {
+                return StatusCode(502);
+            }
+            catch (TaskCanceledException)
+            {
+                return StatusCode(504);
+            }
+        }
+
 
         // ======================================
         // 9. HANDLE EXPIRED API SESSION

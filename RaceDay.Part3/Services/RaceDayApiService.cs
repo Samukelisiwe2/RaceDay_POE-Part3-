@@ -1274,6 +1274,114 @@ namespace RaceDay.Part3.Services
             return (true, "Event banner uploaded successfully.");
         }
 
+        public async Task<(bool Success, string Message)>
+            UploadParticipantPictureAsync(
+                IFormFile file,
+                string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            if (file == null || file.Length == 0)
+                return (false, "Please select a picture.");
+
+            if (file.Length > 5 * 1024 * 1024)
+                return (false, "Maximum file size is 5 MB.");
+
+            using var form = new MultipartFormDataContent();
+
+            using var stream = file.OpenReadStream();
+            using var image = new StreamContent(stream);
+
+            image.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    file.ContentType == "image/png"
+                        ? "image/png"
+                        : "image/jpeg");
+
+            form.Add(image, "file", file.FileName);
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "api/profiles/participant/picture");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            request.Content = form;
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Unauthorized ||
+                response.StatusCode ==
+                System.Net.HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            if (response.IsSuccessStatusCode)
+                return (true, "Profile picture uploaded successfully.");
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.BadRequest)
+            {
+                return (false,
+                    "Complete your profile and select a valid JPEG or PNG under 5 MB.");
+            }
+
+            return (false, "Unable to upload profile picture.");
+        }
+
+        public async Task<(byte[] Data, string ContentType)?>
+            GetParticipantPictureAsync(string authenticationCookie)
+        {
+            if (string.IsNullOrWhiteSpace(authenticationCookie))
+                throw new UnauthorizedAccessException();
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                "api/profiles/participant/picture");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie",
+                authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.Unauthorized ||
+                response.StatusCode ==
+                System.Net.HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            if (response.StatusCode ==
+                System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            string contentType =
+                response.Content.Headers.ContentType?.MediaType ?? "";
+
+            if (contentType != "image/jpeg" &&
+                contentType != "image/png")
+            {
+                throw new HttpRequestException(
+                    "Unexpected image content type.");
+            }
+
+            byte[] data =
+                await response.Content.ReadAsByteArrayAsync();
+
+            return (data, contentType);
+        }
+
 
 
     }
