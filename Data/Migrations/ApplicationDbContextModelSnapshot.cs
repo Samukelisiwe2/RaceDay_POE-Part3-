@@ -288,6 +288,11 @@ namespace RaceDay.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EventId"));
 
+                    b.Property<string>("BannerBlobName")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("Banner_Blob_Name");
+
                     b.Property<DateTime>("ClosingDate")
                         .HasColumnType("date")
                         .HasColumnName("Closing_Date");

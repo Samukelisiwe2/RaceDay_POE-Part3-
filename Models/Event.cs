@@ -47,6 +47,13 @@ namespace RaceDay.Models
         [Column("Closing_Date", TypeName = "date")]
         public DateTime ClosingDate { get; set; }
 
+        // Azure Blob name for the event banner.
+        // Null means the event has no uploaded banner.
+        [StringLength(300)]
+        [Column("Banner_Blob_Name")]
+        public string? BannerBlobName { get; set; }
+
+
         // Each event belongs to an organiser.
         [ForeignKey(nameof(OrganiserId))]
         public Organiser Organiser { get; set; } = null!;

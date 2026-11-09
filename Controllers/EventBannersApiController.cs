@@ -172,6 +172,16 @@ namespace RaceDay.Controllers
                     },
                     cancellationToken);
 
+                var eventToUpdate = await _db.Events
+                    .FirstAsync(
+                        e => e.EventId == eventId,
+                        cancellationToken);
+
+                eventToUpdate.BannerBlobName = blobName;
+
+                await _db.SaveChangesAsync(cancellationToken);
+
+
                 return Created(
                     $"/api/events/{eventId}/banner",
                     new
