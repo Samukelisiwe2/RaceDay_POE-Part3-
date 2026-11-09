@@ -107,7 +107,14 @@ if (!isIntegrationTest)
         .GetRequiredService<ApplicationDbContext>();
 
     // Apply pending SQL Server migrations.
-    await db.Database.MigrateAsync();
+
+    bool applyMigrations = app.Configuration.GetValue<bool>(
+        "RaceDay:ApplyMigrations", true);
+
+    if (applyMigrations)
+    {
+        await db.Database.MigrateAsync();
+    }
 
     // ======================================
     // CREATE APPLICATION ROLES
