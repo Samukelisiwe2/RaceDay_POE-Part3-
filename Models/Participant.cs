@@ -41,6 +41,11 @@ namespace RaceDay.Models
         [Column("Phone_Number")]
         public string PhoneNumber { get; set; } = string.Empty;
 
+        [StringLength(500)]
+        [Column("Profile_Picture_Blob_Name")]
+        public string? ProfilePictureBlobName { get; set; }
+
+
         // One participant can register for many races.
         public ICollection<Enrollment> Enrollments { get; set; }
             = new List<Enrollment>();

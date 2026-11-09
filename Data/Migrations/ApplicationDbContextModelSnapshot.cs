@@ -423,6 +423,11 @@ namespace RaceDay.Data.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("Phone_Number");
 
+                    b.Property<string>("ProfilePictureBlobName")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Profile_Picture_Blob_Name");
+
                     b.HasKey("ParticipantId");
 
                     b.HasIndex("Email")
