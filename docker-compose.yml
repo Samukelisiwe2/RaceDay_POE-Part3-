@@ -1,0 +1,39 @@
+services:
+  api:
+    image: raceday-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      RaceDay__ApplyMigrations: "false"
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,14330;Database=RaceDayDb;User Id=raceday_docker;Password=${RACEDAY_SQL_PASSWORD:?SQL password required};Encrypt=True;TrustServerCertificate=True"
+      AzureBlob__ConnectionString: "${RACEDAY_AZURE_CONNECTION_STRING:-}"
+      AzureBlob__ContainerName: event-banners
+    ports:
+      - "127.0.0.1:8082:8080"
+    networks:
+      - raceday-network
+    restart: "no"
+
+  mvc:
+    image: raceday-mvc:latest
+    build:
+      context: .
+      dockerfile: RaceDay.Part3/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ApiSettings__BaseUrl: http://api:8080/
+    ports:
+      - "127.0.0.1:8083:8080"
+    depends_on:
+      - api
+    networks:
+      - raceday-network
+    restart: "no"
+
+networks:
+  raceday-network:
+    driver: bridge
