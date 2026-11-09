@@ -95,7 +95,11 @@ namespace RaceDay.Controllers
                     e.Location,
                     e.EventType,
                     e.Status,
-                    e.ClosingDate
+                    e.ClosingDate,
+
+
+HasBanner = e.BannerBlobName != null
+
                 })
                 .FirstOrDefaultAsync();
 

@@ -125,6 +125,40 @@ namespace RaceDay.Part3.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Banner(int id)
+        {
+            var sessionId = User.FindFirst("ApiSessionId")?.Value;
+            var apiCookie = _sessions.GetApiCookie(sessionId);
+
+            if (string.IsNullOrWhiteSpace(apiCookie))
+                return Unauthorized();
+
+            try
+            {
+                var banner = await _api.GetEventBannerAsync(id, apiCookie);
+
+                if (banner == null)
+                    return NotFound();
+
+                Response.Headers.CacheControl = "private, no-store";
+
+                return File(banner.Value.Data, banner.Value.ContentType);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (HttpRequestException)
+            {
+                return StatusCode(502);
+            }
+            catch (TaskCanceledException)
+            {
+                return StatusCode(504);
+            }
+        }
+
     }
 }
 

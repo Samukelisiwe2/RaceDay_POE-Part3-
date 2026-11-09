@@ -60,6 +60,17 @@
 
     </div>
 
+    @if (Model.HasBanner)
+    {
+        <div class="card shadow-sm overflow-hidden mb-4">
+            <img src="@Url.Action("Banner", "Events", new { id = Model.EventId })"
+                 alt="Banner for @Model.EventName"
+                 class="w-100"
+                 style="max-height: 380px; object-fit: cover;"
+                 loading="lazy" />
+        </div>
+    }
+
     <div class="row g-4">
 
         <div class="col-lg-8">

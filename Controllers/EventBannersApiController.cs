@@ -203,5 +203,83 @@ namespace RaceDay.Controllers
                     statusCode: 502);
             }
         }
+        // =====================================
+        // GET EVENT BANNER FROM AZURE
+        // =====================================
+
+        [HttpGet]
+        [Authorize(Roles = "Organiser,Participant")]
+        public async Task<IActionResult> GetBanner(
+            int eventId,
+            CancellationToken cancellationToken)
+        {
+            if (eventId <= 0)
+                return NotFound();
+
+            var raceEvent = await _db.Events
+                .AsNoTracking()
+                .Where(e => e.EventId == eventId)
+                .Select(e => new { e.BannerBlobName })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (raceEvent == null ||
+                string.IsNullOrWhiteSpace(raceEvent.BannerBlobName))
+            {
+                return NotFound();
+            }
+
+            string? connectionString =
+                _configuration["AzureBlob:ConnectionString"];
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+                return Problem(
+                    "Azure Storage is not configured.",
+                    statusCode: 503);
+
+            string containerName =
+                _configuration["AzureBlob:ContainerName"]
+                ?? "event-banners";
+
+            try
+            {
+                var service = new BlobServiceClient(connectionString);
+
+                var container =
+                    service.GetBlobContainerClient(containerName);
+
+                var blob =
+                    container.GetBlobClient(raceEvent.BannerBlobName);
+
+                var download = await blob.DownloadContentAsync(
+                    cancellationToken);
+
+                string contentType =
+                    download.Value.Details.ContentType;
+
+                if (contentType != "image/jpeg" &&
+                    contentType != "image/png")
+                {
+                    return StatusCode(415);
+                }
+
+                Response.Headers.CacheControl = "private, no-store";
+
+                return File(
+                    download.Value.Content.ToArray(),
+                    contentType);
+            }
+            catch (Azure.RequestFailedException ex)
+                when (ex.Status == 404)
+            {
+                return NotFound();
+            }
+            catch (Azure.RequestFailedException)
+            {
+                return Problem(
+                    "Unable to retrieve the Azure banner.",
+                    statusCode: 502);
+            }
+        }
+
     }
 }

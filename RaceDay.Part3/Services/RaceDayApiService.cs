@@ -1173,6 +1173,38 @@ namespace RaceDay.Part3.Services
             return (false, "Event deletion was not confirmed.");
         }
 
+        public async Task<(byte[] Data, string ContentType)?>
+            GetEventBannerAsync(int eventId, string authenticationCookie)
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"api/events/{eventId}/banner");
+
+            request.Headers.TryAddWithoutValidation(
+                "Cookie", authenticationCookie);
+
+            using var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized ||
+                response.StatusCode == HttpStatusCode.Forbidden)
+                throw new UnauthorizedAccessException();
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return null;
+
+            response.EnsureSuccessStatusCode();
+
+            string contentType =
+                response.Content.Headers.ContentType?.MediaType ?? "";
+
+            if (contentType != "image/jpeg" && contentType != "image/png")
+                throw new HttpRequestException("Invalid banner content type.");
+
+            var data = await response.Content.ReadAsByteArrayAsync();
+
+            return (data, contentType);
+        }
+
 
 
     }

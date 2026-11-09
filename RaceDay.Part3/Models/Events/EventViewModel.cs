@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace RaceDay.Part3.Models.Events
 {
     public class EventViewModel
@@ -18,6 +20,9 @@ namespace RaceDay.Part3.Models.Events
         public string Status { get; set; } = "";
 
         public DateTime ClosingDate { get; set; }
+
+        public bool HasBanner { get; set; }
     }
 }
+
 
