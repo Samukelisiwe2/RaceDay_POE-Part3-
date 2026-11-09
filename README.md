@@ -1,418 +1,139 @@
 # RaceDay – Event and Race Management System
-<img width="1920" height="1080" alt="RaceDay_GitHub_Actions_56_Passed" src="https://github.com/user-attachments/assets/f8ec630e-452b-4262-bd2e-858c22bf5ae6" />
-<img width="1920" height="1080" alt="raceday_tests" src="https://github.com/user-attachments/assets/4eaa335a-f0e9-47c3-884f-070ca607c0b2" />
-**Module:** PROG6212 – Portfolio of Evidence Part 2  
-**Developed using:** ASP.NET Core MVC, C#, .NET 10 and SQL Server  
-**GitHub Repository:** https://github.com/Samukelisiwe2/RaceDay_Part2
-**YouTube**:
-
-## 1. About the Project
-
-RaceDay is a web application I developed to make organising and participating in sporting events easier.
-
-The idea behind the project is to have one system where organisers can create events, manage race categories, keep track of participants and record race results. Participants can register for an account, browse available events, enter races and view their results.
-
-I built the application using ASP.NET Core MVC and C#, with SQL Server storing the information. I also used ASP.NET Core Identity to handle user authentication and make sure people can only access the features allowed by their roles.
-
-For Part 2 of the project, I expanded the application by adding API endpoints documented through Swagger, automated testing with xUnit and continuous integration using GitHub Actions.
-
-## 2. Project Objectives
-
-The main goals of RaceDay are to:
-
-- Make race and event management easier for organisers.
-- Allow participants to find and enter available events.
-- Provide secure registration and login.
-- Keep organiser and participant information organised.
-- Prevent duplicate registrations and invalid entries.
-- Record race times and finishing positions.
-- Use role-based permissions to protect different parts of the system.
-- Provide API documentation that can be tested through Swagger.
-- Use automated tests to check important application behaviour.
-
-## 3. Technologies Used
-
-| Technology | How I Used It |
-|---|---|
-| C# | Writing the application logic |
-| ASP.NET Core MVC | Building the web application |
-| .NET 10 | Application framework |
-| Razor Views | Creating the user interface |
-| SQL Server | Storing application data |
-| Entity Framework Core | Working with the database |
-| ASP.NET Core Identity | Registration, login and user roles |
-| Swagger / Swashbuckle | Documenting and testing API endpoints |
-| xUnit | Writing automated tests |
-| SQLite | Running isolated integration tests |
-| Git and GitHub | Tracking changes and storing the project |
-| GitHub Actions | Automatically building and testing the project |
-| Visual Studio | Developing and debugging the application |
-
-## 4. User Roles
-
-RaceDay has three main user roles.
-
-### Administrator
-
-The Administrator manages user role requests. When someone registers and requests to become an Organiser or Participant, the request can be reviewed before the role is approved.
-
-This helps prevent users from giving themselves permissions they shouldn't have.
-
-### Organiser
-
-Organisers are responsible for managing races.
-
-They can create events, edit their own events, manage race categories, view event registrations and record race results.
-
-An Organiser is not supposed to modify another Organiser's events.
-
-### Participant
-
-Participants use RaceDay to find and enter races.
-
-They can maintain their profiles, view available events, select race categories, check their registrations and view their recorded race results.
-
-## 5. Main Features
-
-### 5.1 Registration and Login
-
-I used ASP.NET Core Identity to manage user accounts.
-
-The system supports registration, login, logout, password hashing and authenticated sessions.
-
-When a user registers, they request either the Organiser or Participant role. That role is not automatically approved during registration.
-
-I also added authorization rules to restrict access to protected pages and API operations.
-
-### 5.2 User Profiles
-
-Both Organisers and Participants can view and update their profiles.
-
-A Participant profile stores their name, date of birth, gender, phone number and email address.
-
-An Organiser profile stores the organiser's name, email address and contact number.
-
-The system uses the logged-in account to identify which profile belongs to the user.
-
-### 5.3 Event Management
-
-Organisers can create and manage race events.
-
-Each event contains information such as its name, description, date, location, event type, registration closing date and current status.
-
-Supported event types are Run, Walk and Cycle.
-
-Events can have statuses such as Planned, Open, Closed, Completed or Cancelled.
-
-Ownership checks are used to prevent an Organiser from changing events belonging to someone else.
-
-### 5.4 Race Categories
-
-Each event can have different categories.
-
-For example, an event could offer a 5 km Fun Run and a 10 km Run, each with its own entry fee and participant limit.
-
-For every category, RaceDay stores the category name, distance, fee, maximum capacity and current participant count.
-
-The application also checks for duplicate categories and restrictions around participant capacity.
-
-### 5.5 Event Enrolments
-
-Participants can select an available race category and submit an enrolment.
-
-The system records their selected category, registration date, enrolment status and a generated race number.
-
-RaceDay includes checks for closed registrations, duplicate entries and full categories.
-
-Enrolment statuses include Pending, Confirmed and Cancelled.
-
-### 5.6 Race Results
-
-Organisers can capture race results for registered participants.
-
-Each result can include a start time, finish time, overall finishing position and result status.
-
-Participants can then view their available race results through their accounts.
-
-I tested saving and editing race results during development, including checking that the Participant's results page displays the recorded information.
-
-### 5.7 Payment Records
-
-The database design also includes payment records linked to race enrolments.
-
-Payment statuses include Pending, Paid, Failed and Refunded.
-
-Database constraints and validation rules help maintain payment consistency.
-
-This is payment data management within the project, not a claim that a live payment gateway is connected.
-
-## 6. Database Design
-
-I used SQL Server with Entity Framework Core to manage the RaceDay database.
-
-The main tables cover Organisers, Participants, Events, Race Categories, Enrolments, Payments, Race Results and Role Requests.
-
-ASP.NET Core Identity manages the additional tables needed for user accounts and roles.
-
-Some important relationships are:
-
-- One Organiser can create multiple Events.
-- One Event can contain multiple Race Categories.
-- One Participant can have multiple Enrolments.
-- One Race Category can have multiple Enrolments.
-- Each Enrolment belongs to a Participant and a Race Category.
-- An Enrolment can have related Payments and one Race Result.
-
-I used foreign keys, unique indexes, check constraints and SQL Server triggers to help keep the database consistent.
-
-Entity Framework Core migrations are used to manage database schema changes.
-
-## 7. Swagger API Documentation
-
-Alongside the MVC application, I added API controllers so the system's functionality can be accessed and tested through HTTP requests.
-
-Swagger provides a way to view the endpoints, enter request information and check the responses without needing to build a separate client application.
-
-The API covers several areas:
-
-| Area | Examples of Functionality |
-|---|---|
-| Authentication | Registration, login and current user information |
-| Profiles | Viewing and updating profiles |
-| Events | Retrieving, creating, editing and deleting events |
-| Race Categories | Managing categories |
-| Enrolments | Viewing registrations and entering races |
-| Results | Retrieving and managing race results |
-
-### Example API Endpoints
-
-```text
-POST   /api/auth/register
-POST   /api/auth/login
-GET    /api/auth/me
-
-GET    /api/events
-GET    /api/events/{id}
-POST   /api/events
-PUT    /api/events/{id}
-DELETE /api/events/{id}
-
-GET    /api/events/{eventId}/categories
-GET    /api/categories/{id}
-
-GET    /api/enrolments/my
-GET    /api/events/{eventId}/enrolments
-POST   /api/events/{eventId}/enrolments
-
-GET    /api/results/my
-GET    /api/events/{eventId}/results
-
-GET    /api/profiles/organiser
-PUT    /api/profiles/organiser
-GET    /api/profiles/participant
-PUT    /api/profiles/participant
-```
-
-The API also uses role-based authorization where necessary.
-
-### Opening Swagger
-
-Start the RaceDay application in Development mode and open:
-
-`https://localhost:7278/swagger`
-
-The port may be different depending on the local development settings.
-
-### Swagger Testing
-
-During development, I used Swagger to test successful and unsuccessful requests.
-
-Some of the responses I checked included:
-
-- `200 OK` when retrieving existing records.
-- `400 Bad Request` for invalid information.
-- `401 Unauthorized` when login details were incorrect.
-- `403 Forbidden` for restricted access.
-- `404 Not Found` when a requested event did not exist.
-
-These checks helped me confirm that the API was returning appropriate responses for the scenarios tested.
-
-## 8. How to Run RaceDay
-
-### Requirements
-
-Before running the application, you need:
-
+<img width="1920" height="1080" alt="MVC Event" src="https://github.com/user-attachments/assets/c4762797-69c0-446f-883c-a7ae10e6e0f0" />
+<img width="1920" height="1080" alt="build-and-test-part3" src="https://github.com/user-attachments/assets/1161f9b2-04a3-461b-a6b0-9c9d66248591" />
+<img width="1920" height="1080" alt="Docker Swagger" src="https://github.com/user-attachments/assets/20e0e4a8-4072-4335-9051-a1501950875a" />
+<img width="1920" height="1080" alt="02_GitHub_CI_Automated_Tests_60_Passed" src="https://github.com/user-attachments/assets/38226065-4c88-41bd-a038-b40caee33d17" />
+<img width="1920" height="1080" alt="raceday-api-1 and raceday-mvc-1" src="https://github.com/user-attachments/assets/7c295c3a-17c9-4776-9086-f0bf92372f41" />
+Module: PROG6212 — Programming Portfolio of Evidence, Part 3
+Technology: ASP.NET Core MVC, ASP.NET Core REST API, C#, .NET 10, SQL Server
+Repository: Samukelisiwe2/RaceDay_POE-Part3-
+Development branch: poe-part3-development
+youtube link: https://youtu.be/dtgkpIjTQec
+GitHub link:https://github.com/Samukelisiwe2/RaceDay_POE-Part3-.git
+
+The video walks through the MVC website layout, Organiser and Participant functionality, API integration, Azure Blob Storage, Docker, and automated testing.
+1. Introduction
+RaceDay is a student-built event and race management application. Organisers create events and race categories, track registrations, and capture results. Participants browse events, enrol in races, and view their registrations and results. The project was developed through successive POE parts, building on the existing application rather than starting over.
+
+For Part 3, the solution contains a separate ASP.NET Core MVC frontend that communicates with the existing REST API. The system also demonstrates Azure Blob Storage for event banners, Docker containerisation, SQL Server integration, automated testing, and GitHub Actions continuous integration.
+2. Architecture
+Browser
+   |
+   v
+RaceDay.Part3 (ASP.NET Core MVC)
+   | HTTP requests + authenticated API session
+   v
+RaceDay (Part 2 REST API)
+   |                         |
+   v                         v
+SQL Server / EF Core     Azure Blob Storage
+RaceDayDb                Private event-banners container
+The frontend uses a named HttpClient to call the API. API endpoints enforce authentication, authorisation and event ownership checks. The backend uses Entity Framework Core and SQL Server for persistent event, user, enrolment and result data. Event banner files are stored privately in Azure Blob Storage; the associated blob name is recorded in the event database record.
+3. Solution projects
+Project	Responsibility
+RaceDay	Part 2 backend, REST endpoints, Identity, SQL Server and Azure integration
+RaceDay.Part3	MVC website, Razor views and API client services
+RaceDay.Tests	xUnit tests and integration tests using an isolated test database
+
+
+Core technologies include .NET 10, C#, Razor, Entity Framework Core, ASP.NET Core Identity, Swagger / OpenAPI, Azure Storage Blobs, Docker Desktop, Docker Compose, xUnit and GitHub Actions.
+4. User roles and functionality
+Administrator: reviews role requests and manages authorised access.
+
+Organiser: maintains their profile, creates and edits events, manages event categories, views registrations, captures and edits results, and uploads banners to events they own. Restrictions prevent unauthorised changes to other organisers' events.
+
+Participant: maintains their profile, browses events, enrols in eligible race categories, checks their enrolments and views results.
+
+Event information includes event name, description, type, location, date, registration closing date and status. Categories and enrolments are validated for business rules such as duplicates, capacity and registration state. Payment-related records are part of the data model; a live payment gateway is not claimed.
+5. Running locally in Visual Studio
+Prerequisites
+- Visual Studio with ASP.NET development workload, or a compatible editor
 - .NET 10 SDK
-- Visual Studio with ASP.NET development support
-- SQL Server or SQL Server Express
+- SQL Server / SQL Server Express and a configured development database
 - Git
-
-### Clone the Repository
-
-```bash
-git clone https://github.com/Samukelisiwe2/RaceDay_Part2.git
-```
-
-Open `RaceDay.slnx` in Visual Studio.
-
-### Restore Packages
-
-```bash
+- Azure Blob Storage configuration if testing image features
+Clone and build:
+git clone https://github.com/Samukelisiwe2/RaceDay_POE-Part3-.git
+cd RaceDay_POE-Part3-
 dotnet restore RaceDay.slnx
-```
-
-### Configure the Database
-
-Set up the `DefaultConnection` connection string for your local SQL Server database.
-
-Make sure it points to the correct development database before running migrations.
-
-### Build the Project
-
-```bash
 dotnet build RaceDay.slnx
-```
+Configure ConnectionStrings:DefaultConnection using local development settings or ASP.NET Core User Secrets. Apply EF Core migrations with an account authorised to make schema changes. Do not commit passwords or Azure connection strings.
 
-### Run the Application
+Configure multiple startup projects in Visual Studio for RaceDay and RaceDay.Part3. The local URLs used for development were:
+- API Swagger: https://localhost:7278/swagger/index.html
+- Part 3 MVC website: https://localhost:7074
+Actual URLs may differ based on local launch profiles.
+6. Docker Compose setup
+The repository contains Dockerfile, RaceDay.Part3/Dockerfile and docker-compose.yml. Docker Compose runs the API and MVC website on an internal Docker network. The tested local development configuration connects to an existing Windows SQL Server Express instance rather than starting a database container.
+Component	Development address
+Docker API / Swagger	http://localhost:8082/swagger/index.html
+Docker MVC website	http://localhost:8083
+API-to-database	host.docker.internal:14330
+MVC-to-API	http://api:8080/
 
-```bash
-dotnet run --project RaceDay.csproj
-```
 
-Open the localhost address displayed when the application starts.
+The Docker environment expects RACEDAY_SQL_PASSWORD and, for event image operations, RACEDAY_AZURE_CONNECTION_STRING. Set these privately in the terminal running Compose; they should not appear in tracked files. The Docker API is configured with RaceDay__ApplyMigrations=false to avoid running database schema migrations through its restricted application login.
+# After securely setting the required environment variables:
+docker compose build
+docker compose up -d
+docker compose ps
 
-## 9. Automated Testing
+# Inspect startup output when necessary:
+docker compose logs --tail 50 api
+docker compose logs --tail 50 mvc
 
-One of the main improvements I made during Part 2 was adding automated tests.
+# Stop the containers:
+docker compose down
+Development only: The HTTP endpoints and database certificate trust used in this local container setup are not production deployment settings. SQL Server port access should remain restricted; do not expose it publicly. Docker Data Protection key persistence is a future hardening item.
 
-I used xUnit to test important parts of the application, including input validation, authentication-related behaviour, event models, enrolment models and authorization rules.
+7. Azure Blob Storage and event banner evidence
+The API supports protected event banner uploads and retrieval. Uploaded images are stored in a private event-banners container. The MVC Event Details page can display the associated image from the backend.
+7.1 Part 3 event details page
+The following screenshot demonstrates the Boxer Super Run Event Details page displaying the stored event banner, event information, and organiser actions.
 
-I also added integration tests that send HTTP requests to selected API endpoints.
+7.2 Docker Swagger API screenshot
+The screenshot below shows the Docker-hosted Swagger interface for POST /api/events/{eventId}/banner at port 8082. The visible response is HTTP 401 Unauthorized, so this particular image is evidence that the protected endpoint is accessible and enforces authentication; it is not evidence of a successful upload. Successful image uploads were separately tested during development.
 
-These integration tests use a temporary SQLite database, keeping the tests separate from the main SQL Server database.
+For successful upload evidence, capture a separate authenticated 201 Created response without exposing credentials or authentication cookies.
+8. Automated tests
+RaceDay uses xUnit for unit and integration tests, including validation, authentication, enrolments, event management and role authorisation. Isolated SQLite-backed integration tests avoid changing the main SQL Server development database.
 
-### Test Breakdown
+Run the tests:
+dotnet test RaceDay.Tests/RaceDay.Tests.csproj --configuration Release
+Verified on 9 November 2026: 60 tests passed, 0 failed and 0 skipped. Automated tests complement, but do not replace, manual workflow testing.
+9. GitHub Actions CI/CD evidence
+The RaceDay Build and Tests workflow checks out the repository, sets up .NET 10, restores dependencies, builds the solution and runs automated tests.
 
-| Test Class | Number of Tests |
-|---|---:|
-| ApiIntegrationTests | 7 |
-| AuthenticationTests | 7 |
-| EnrollmentTests | 12 |
-| EventManagementTests | 20 |
-| RoleAuthorizationTests | 8 |
-| UnitTest1 | 2 |
-| **Total** | **56** |
+Successful workflow: GitHub Actions run #32
+9.1 CI build-and-test job
+The screenshot shows the successful build-and-test job with green checks for restore, build and automated testing.
 
-### Running the Tests
+9.2 Automated test result: 60 passed
+The expanded test output confirms a successful test run of 60 tests and a successful build with no build warnings or errors in the displayed test step.
 
-From the solution directory, run:
+The successful run also displayed an unrelated GitHub Actions runtime deprecation warning and Ubuntu runner migration notice. These did not fail the CI job.
+10. Security
+The application uses ASP.NET Core Identity, authenticated API sessions, role-based permissions and event ownership restrictions. Azure event images are stored in a private container. Database and Azure credentials must be supplied through private developer configuration rather than committed files.
 
-```bash
-dotnet test RaceDay.slnx
-```
+This is an academic development system, not a production-hardened deployment. Persisting Data Protection keys, production HTTPS/certificate configuration and further security reviews are recommended before real-world deployment.
+11. POE evidence index
+Evidence file	Demonstrates
+POE_Evidence/CI_CD/build-and-test-part3.png	Successful GitHub Actions build-and-test job
+POE_Evidence/CI_CD/02_GitHub_CI_Automated_Tests_60_Passed.png	60/60 automated tests passing in GitHub Actions
+POE_Evidence/Docker/Docker Swagger.png	Docker-hosted protected API endpoint; 401 response shown
+POE_Evidence/MVC/MVC Event.png	Working MVC Event Details page with banner
 
-### Local Results
 
-I ran the automated tests using Visual Studio Test Explorer.
-
-**Final verified local result:**
-
-- 56 tests passed
-- 0 tests failed
-- 0 tests skipped
-
-The tests cover the implemented test cases, although further testing would still be useful for complete end-to-end workflows and authenticated user scenarios.
-
-## 10. GitHub Actions
-
-I configured GitHub Actions so that RaceDay can automatically build and run its tests after code changes are pushed to GitHub.
-
-The workflow is stored in:
-
-`.github/workflows/dotnet-tests.yml`
-
-It checks out the repository, installs the .NET SDK, restores dependencies, builds the solution and executes the automated tests.
-
-### GitHub Actions Results
-
-The workflow completed successfully on the `master` branch.
-
-**Verified results:**
-
-- Build succeeded
-- 56 tests passed
-- 0 tests failed
-- 0 build errors
-
-This was useful because it confirmed that the project and tests could run in a GitHub-hosted environment, not only on my own computer.
-
-**Successful workflow run:**  
-https://github.com/Samukelisiwe2/RaceDay_Part2/actions/runs/39073074875
-
-## 11. Security and Validation
-
-Security was an important consideration while developing RaceDay.
-
-I used ASP.NET Core Identity for managing accounts, and role-based authorization to separate Organiser and Participant functionality.
-
-I also included input validation, ownership checks, unique database constraints and anti-forgery protection on relevant MVC forms.
-
-These measures help prevent invalid data and unauthorised actions.
-
-The project has not undergone a full production security audit, so further security testing would be needed before deploying it for real users.
-
-## 12. Evidence for Part 2
-
-The project evidence includes screenshots demonstrating:
-
-- Registration and login functionality.
-- Organiser and Participant profiles.
-- Event creation and management.
-- Race categories and enrolments.
-- Capturing and viewing race results.
-- Swagger API operations and responses.
-- Role-based access restrictions.
-- Visual Studio Test Explorer showing 56 passing tests.
-- GitHub Actions showing 56 passing tests.
-
-The screenshots provide supporting evidence for the features and tests completed during development.
-
-## 13. Challenges and What I Learned
-
-One of the challenges I faced was getting the integration tests to work with a separate database.
-
-The main application uses SQL Server, while the integration tests use SQLite. Some SQL Server-specific database expressions initially caused errors in the SQLite test environment.
-
-I had to adjust the Entity Framework Core configuration so that the correct SQL expressions were used for each database provider.
-
-I also encountered issues when moving the test project into the GitHub repository. The project references and solution paths had to be corrected before both projects could build together.
-
-Another important part was testing role-based access. Some requests returned `403 Forbidden`, which initially looked like errors, but helped demonstrate that restricted endpoints were enforcing permissions.
-
-Working through these problems helped me understand more about database providers, automated testing, debugging, project references and continuous integration.
-
-## 14. Future Improvements
-
-Although the main coursework functionality has been implemented, there are still areas I would improve in future.
-
-These include more complete end-to-end tests, additional authenticated API integration tests, stronger concurrency handling, better reporting features, interface improvements and integration with a real payment provider.
-
-I would also like to improve how the system displays race statistics and participant progress.
-
-## 15. Conclusion
-
-Developing RaceDay helped me bring together several concepts I've learned in software development, including object-oriented programming, databases, MVC architecture, authentication and testing.
-
-Part 2 gave me the opportunity to expand the working application with API documentation, stronger validation and automated testing.
-
-One of the most useful outcomes was getting all 56 automated tests to pass both locally and through GitHub Actions. This gave me a better understanding of why testing and continuous integration are important when maintaining a software project.
-
-RaceDay is still a student project with room for improvement, but it demonstrates the main features of an event and race management system and the development practices used to build and test it.
-
----
-
-**Project:** RaceDay  
-**Module:** PROG6212  
-**Assessment:** Portfolio of Evidence – Part 2  
-**Repository:** https://github.com/Samukelisiwe2/RaceDay_Part2
+Additional evidence to collect or confirm before final submission includes the Docker Desktop containers list showing both containers running, fully authenticated Azure upload proof, final Organiser and Participant end-to-end checks, and any written report required by the rubric. The project demonstration video is linked above.
+12. Challenges and lessons learned
+Part 3 required connecting a separate MVC frontend to a protected REST API and coordinating authenticated user sessions. Azure Blob Storage required upload validation, private blob retrieval and event-to-image persistence. Docker introduced WSL 2, virtualization, container networking and SQL Server authentication challenges. GitHub Actions and xUnit provided repeatable evidence that the solution builds and its current automated tests pass.
+13. Future improvements
+- Persist Data Protection keys across container recreation.
+- Add further end-to-end, accessibility and security regression tests.
+- Use production-grade HTTPS and secret management for deployment.
+- Extend operational monitoring and reporting.
+- Introduce a live payment provider only after explicit implementation and verification.
+14. Conclusion
+RaceDay Part 3 extends the event and race management application with a separate MVC interface, API integration, cloud-based image storage, Docker containerisation and CI testing. The documented test evidence shows 60 passing tests locally and on GitHub Actions, and the development environment demonstrates functioning API and MVC workflows.
+PROG6212 — Portfolio of Evidence, Part 3
+Repository: https://github.com/Samukelisiwe2/RaceDay_POE-Part3-
